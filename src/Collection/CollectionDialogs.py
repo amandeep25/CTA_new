@@ -260,6 +260,12 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
         ethics_sizer.Add(ethics_reddit_sizer, 0, wx.ALL, 5)
         self.ethics_pushshift_ctrl = wx.CheckBox(self, label=GUIText.ETHICS_CONFIRMATION+GUIText.ETHICS_PUSHSHIFT)
         ethics_sizer.Add(self.ethics_pushshift_ctrl, 0, wx.ALL, 5)
+        self.ethics_pushshift2_ctrl = wx.CheckBox(self, label=GUIText.ETHICS_CONFIRMATION+GUIText.ETHICS_PUSHSHIFT2)
+        ethics_pushshift2_url = wx.adv.HyperlinkCtrl(self, label="3", url=GUIText.ETHICS_PUSHSHIFT2_URL)
+        ethics_pushshift2_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        ethics_pushshift2_sizer.Add(self.ethics_pushshift2_ctrl)
+        ethics_pushshift2_sizer.Add(ethics_pushshift2_url)
+        ethics_sizer.Add(ethics_pushshift2_sizer, 0, wx.ALL, 5)
         sizer.Add(ethics_sizer, 0, wx.ALL, 5)
 
         #Retriever button to collect the requested data
@@ -329,6 +335,7 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
         if subreddit == "":
             error_messages.append(GUIText.REDDIT_SUBREDDIT_MISSING_ERROR)
             logger.warning('No subreddit entered')
+            subreddits = []
         else:
             subreddits = str(subreddit).split(',')
             if len(subreddits) > 0:
@@ -404,6 +411,8 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
             logger.warning('Ethics not checked')
         if not self.ethics_pushshift_ctrl.IsChecked():
             error_messages.append(GUIText.ETHICS_CONFIRMATION_MISSING_ERROR+GUIText.ETHICS_PUSHSHIFT)
+        if not self.ethics_pushshift2_ctrl.IsChecked():
+            error_messages.append(GUIText.ETHICS_CONFIRMATION_MISSING_ERROR+GUIText.ETHICS_PUSHSHIFT2)
             logger.warning('Ethics not checked')
 
         if len(error_messages) == 0:

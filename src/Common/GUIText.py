@@ -643,7 +643,9 @@ class Collection(Main, Datasets):
     ETHICS_REDDIT = "Reddit's policies and terms of use for collecting data."
     ETHICS_REDDIT_URL = "https://www.redditinc.com/policies/"
     ETHICS_REDDITAPI_URL = "https://www.reddit.com/wiki/api-terms"
-    ETHICS_PUSHSHIFT = "that this toolkit uses the Pushshift.io api to collect Reddit Data."
+    ETHICS_PUSHSHIFT = "that this toolkit option uses the Pushshift.io api to collect Reddit Data."
+    ETHICS_PUSHSHIFT2 = "that the Pushshift.io's Reddit API access was removed by Reddit for not being in compliance with revised terms."
+    ETHICS_PUSHSHIFT2_URL = "https://www.reddit.com/r/modnews/comments/134tjpe/reddit_data_api_update_changes_to_pushshift_access/"
 
     INCLUDE_RETWEETS = "Include retweets"
     RETRIEVAL_NOTICE_TWITTER = "* Currently, only (English) tweets up to 7 days back from the current date may be retrieved. *"

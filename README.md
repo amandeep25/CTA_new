@@ -1,5 +1,10 @@
 # Computational Thematic Analysis Toolkit
 
+## IMPORTANT
+May 1st 2023 we learned that Redit has informed it's moderator community that pushshift.io was in violation wit Reddit API's new terms and has had it's access revoked. https://www.reddit.com/r/modnews/comments/134tjpe/reddit_data_api_update_changes_to_pushshift_access/
+
+As such Pushshift.io functionality in the toolkit should be used with caution and careful concideration. The source code will have a warning regarding this situation added to the data collection functionality that was leveraging the Pushshift API.
+
 ## Reference
 
 Robert P. Gauthier and James R. Wallace. 2022. The Computational Thematic Analysis Toolkit. Proc. ACM Hum.-Comput. Interact. 6, GROUP, Article 25 (January 2022), 15 pages. https://doi.org/10.1145/3492844

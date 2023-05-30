@@ -3,7 +3,7 @@
 ## IMPORTANT
 May 1st 2023 we learned that Redit has informed it's moderator community that pushshift.io was in violation with Reddit API's new terms and has had it's access revoked. https://www.reddit.com/r/modnews/comments/134tjpe/reddit_data_api_update_changes_to_pushshift_access/
 
-As such Pushshift.io functionality in the toolkit should be used with caution and careful concideration. The source code will have a warning regarding this situation added to the data collection functionality that was leveraging the Pushshift API.
+As such Pushshift.io functionality in the toolkit should be used with caution and careful consideration. The source code will have a warning regarding this situation added to the data collection functionality that was leveraging the Pushshift API.
 
 ## Reference
 

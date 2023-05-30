@@ -155,6 +155,7 @@ class RetrieveRedditDatasetThread(Thread):
                         status_flag = False
                         error_msg = GUIText.RETRIEVAL_FAILED_ERROR
                 if status_flag:
+                    step_label = GUIText.RETRIEVING_REDDIT_IMPORTING_COMMENT_STEP
                     raw_comment_data = self.ImportDataFiles(step_label, subreddit, self.start_date, self.end_date, "RC_")
                     comment_data = {}
                     wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'step':GUIText.RETRIEVING_REDDIT_PREPARING_COMMENT_STEP}))

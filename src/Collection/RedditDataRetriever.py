@@ -103,7 +103,7 @@ def RetrieveMonth(sub, month, prefix):
                             break
         data.insert(0, id_dict)
         file_path = os.path.join(Constants.DATA_PATH, 'Reddit', sub, prefix+month+'.json')
-        with open(file_path, 'w') as outfile:
+        with open(file_path, 'w', encoding="utf-8") as outfile:
             json.dump(data, outfile)
     if status != 0:
         logger.error("Retrieval of sub[%s], file[%s] was incomplete.", sub, month+prefix)
@@ -115,7 +115,7 @@ def UpdateRetrievedMonth(sub, month, file, prefix):
     logger.info("Starting")
     data = []
     new_data = []
-    with open(file, 'r') as infile:
+    with open(file, 'r', encoding="utf-8") as infile:
         data = json.load(infile)
         id_dict = data.pop(0)
     if len(data) > 0:
@@ -158,7 +158,7 @@ def UpdateRetrievedMonth(sub, month, file, prefix):
                             break
         data.insert(0, id_dict)
         file_path = os.path.join(Constants.DATA_PATH, 'Reddit', sub, prefix+month+'.json')
-        with open(file_path, 'w') as outfile:
+        with open(file_path, 'w', encoding="utf-8") as outfile:
             json.dump(data, outfile)
     if status != 0:
         logger.error("Retrieval of sub[%s], file[%s] was incomplete.", sub, month+prefix)

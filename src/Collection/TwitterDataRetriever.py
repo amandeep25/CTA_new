@@ -112,7 +112,7 @@ def RetrieveMonth(auth, name, query, month, end_date, prefix):
         if not os.path.exists(path):
             os.makedirs(path)
         file_path = os.path.join(Constants.DATA_PATH,'Twitter', name, prefix+month+'.json')
-        with open(file_path, 'w') as outfile:
+        with open(file_path, 'w', encoding="utf-8") as outfile:
             json.dump(data, outfile)
     logger.info("Finished")
     return rate_limit_reached
@@ -122,7 +122,7 @@ def UpdateRetrievedMonth(auth, name, query, month, end_date, file, prefix):
     logger.info("Starting")
     data = []
     new_data = []
-    with open(file, 'r') as infile:
+    with open(file, 'r', encoding="utf-8") as infile:
         data = json.load(infile)
         id_dict = data.pop(0)
     if len(data) > 0:
@@ -178,7 +178,7 @@ def UpdateRetrievedMonth(auth, name, query, month, end_date, file, prefix):
         if not os.path.exists(path):
             os.makedirs(path)
         file_path = os.path.join(Constants.DATA_PATH,'Twitter', name, prefix+month+'.json')
-        with open(file_path, 'w') as outfile:
+        with open(file_path, 'w', encoding="utf-8") as outfile:
             json.dump(data, outfile)
     logger.info("Finished")
     return rate_limit_reached

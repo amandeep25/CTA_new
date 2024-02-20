@@ -1326,3 +1326,4 @@ class DatabaseConnection():
             logger.exception("sql failed with error")
         logger.info("Finished")
         return tokens_dict
+

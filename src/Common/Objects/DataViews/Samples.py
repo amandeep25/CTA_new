@@ -265,7 +265,6 @@ class PartsViewCtrl(dv.DataViewCtrl):
                 col_width = column.GetWidth()
                 if col_width > remaining_width/(col_count-col):
                     col_width = remaining_width/(col_count-col)
-                    col_width = int(col_width)
                     column.SetWidth(col_width)
                 remaining_width = remaining_width - col_width
             else:
@@ -345,7 +344,7 @@ class PartsViewCtrl(dv.DataViewCtrl):
         model = self.GetModel()
         for row in self.GetSelections():
             line = ''
-            for col in range(0, len(model.label_column_names)):
+            for col in range(0, model.label_column_names):
                 line = line + str(model.GetValue(row, col)) + '\t'
             selected_items.append(line.strip())
         clipdata = wx.TextDataObject()
@@ -362,9 +361,8 @@ class PartsViewCtrl(dv.DataViewCtrl):
 #     1. Label: string
 #     2. Words: string
 class TopicViewModel(dv.PyDataViewModel):
-    def __init__(self, sample_panel, data):
+    def __init__(self, data):
         dv.PyDataViewModel.__init__(self)
-        self.sample_panel = sample_panel
         self.data = data
         self.UseWeakRefs(False)
 
@@ -448,7 +446,6 @@ class TopicViewModel(dv.PyDataViewModel):
         if col == 1:
             if node.label != value:
                 node.label = value
-                self.sample_panel.DrawLDAPlot(self.sample_panel.selected_parts)
                 main_frame = wx.GetApp().GetTopWindow()
                 main_frame.SamplesUpdated()
 

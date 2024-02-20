@@ -321,4 +321,4 @@ class NoteToolPanel(wx.Panel):
         decreasefontsize_btn.SetToolTip(GUIText.DECREASE_FONT_SIZE)
         sizer.Add(decreasefontsize_btn)
 
-        self.SetSizerAndFit(sizer)
+        self.SetSizerAndFit(sizer) 

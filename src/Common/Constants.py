@@ -7,7 +7,7 @@ import wx
 #import wx.lib.agw.flatnotebook as FNB
 import External.wxPython.flatnotebook_fix as FNB
 
-CUR_VER = '0.8.11'
+CUR_VER = '0.8.10'
 
 #Variables to configure GUI
 FNB_STYLE = FNB.FNB_DEFAULT_STYLE|FNB.FNB_HIDE_ON_SINGLE_TAB|FNB.FNB_NO_X_BUTTON|FNB.FNB_FF2
@@ -113,7 +113,7 @@ NOT_USEFUL = "Not Useful"
 
 # dialogs
 TWITTER_DIALOG_SIZE = wx.Size(350, -1)
-OPTIONS_DIALOG_SIZE = wx.Size(350, -1)
+OPTIONS_DIALOG_SIZE = wx.Size(350, 300)
 
 #definition of fields available for use from the retrievers
 available_fields = {

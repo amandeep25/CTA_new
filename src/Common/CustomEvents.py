@@ -1,4 +1,4 @@
-import wx
+import wx 
 
 # Define events for communication by threads
 EVT_PROGRESS_ID = wx.NewIdRef()

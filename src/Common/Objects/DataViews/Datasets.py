@@ -154,7 +154,7 @@ class DatasetsViewCtrl(dv.DataViewCtrl):
 
         self.Expander(None)
 
-        self.Bind(dv.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self.OnShowPopup)
+        self.Bind(wx.dataview.EVT_DATAVIEW_ITEM_CONTEXT_MENU, self.OnShowPopup)
         self.Bind(wx.EVT_MENU, self.OnCopyItems, id=wx.ID_COPY)
         accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord('C'), wx.ID_COPY)])
         self.SetAcceleratorTable(accel_tbl)
@@ -439,11 +439,9 @@ class DatasetsDataGridTable(wx.grid.GridTableBase):
         grid.ProcessTableMessage(msg)
 
 class DatasetsDataGrid(wx.grid.Grid):
-    def __init__(self, parent, dataset, width, size=wx.DefaultSize):
+    def __init__(self, parent, dataset, size=wx.DefaultSize):
         logger = logging.getLogger(__name__+".DatasetsDataGrid.__init__")
         logger.info("Starting")
-        self.width = width
-
         wx.grid.Grid.__init__(self, parent, size=size)
         self.dataset = dataset
         self.gridtable = DatasetsDataGridTable(dataset)
@@ -524,17 +522,17 @@ class DatasetsDataGrid(wx.grid.Grid):
 
     def AutoSize(self, width=None):
         if self.GetNumberRows() > 0:
-            if width is not None:
-                self.width = width
-            max_size = self.width
+            if width is None:
+                max_size = self.GetSize().GetWidth()*0.98
+            else:
+                max_size = width
             dc = wx.ScreenDC()
             font = self.GetLabelFont()
             dc.SetFont(font)
 
             content_size = dc.GetTextExtent(str("True")).GetWidth()
             self.SetColSize(0, content_size)
-            if content_size < max_size:
-                max_size = max_size - content_size
+            max_size = max_size - content_size
 
             max_label_size = (max_size/2)/len(self.gridtable.label_column_names)
             col_count = 1
@@ -556,8 +554,6 @@ class DatasetsDataGrid(wx.grid.Grid):
                 if contents_size > max_size or label_size > max_label_size:
                     contents_size = max_label_size
                     label_size = max_label_size
-                contents_size = int(contents_size)
-                label_size = int(label_size)
                 self.SetColSize(col_count, max(contents_size, label_size))
                 max_size = max_size - max(contents_size, label_size)
                 col_count = col_count + 1

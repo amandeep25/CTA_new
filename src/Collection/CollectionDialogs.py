@@ -4,7 +4,6 @@ import tweepy
 import chardet
 import pytz
 import csv
-import re
 
 import wx
 import wx.adv
@@ -14,7 +13,6 @@ import Common.Constants as Constants
 from Common.GUIText import Collection as GUIText
 import Common.CustomEvents as CustomEvents
 import Common.Database as Database
-import Common.Objects.GUIs.Generic as GenericGUIs
 import Collection.CollectionThreads as CollectionThreads
 
 class AbstractRetrieverDialog(wx.Dialog):
@@ -69,12 +67,10 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
         main_frame = wx.GetApp().GetTopWindow()
         if main_frame.options_dict['multipledatasets_mode']:
             name_label = wx.StaticText(self, label=GUIText.NAME + " ")
-            name_info = GenericGUIs.InfoIcon(self, GUIText.NAME_TOOLTIP)
             self.name_ctrl = wx.TextCtrl(self)
             self.name_ctrl.SetToolTip(GUIText.NAME_TOOLTIP)
             name_sizer = wx.BoxSizer(wx.HORIZONTAL)
             name_sizer.Add(name_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-            name_sizer.Add(name_info, 0, wx.ALIGN_CENTRE_VERTICAL)
             name_sizer.Add(self.name_ctrl)
             sizer.Add(name_sizer, 0, wx.ALL, 5)
 
@@ -85,12 +81,10 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
 
         #TODO enhance ability to integrate multiple subreddits
         subreddit_label = wx.StaticText(self, label=GUIText.REDDIT_SUBREDDIT)
-        subreddit_info = GenericGUIs.InfoIcon(self, GUIText.REDDIT_SUBREDDIT_TOOLTIP)
         self.subreddit_ctrl = wx.TextCtrl(self)
         self.subreddit_ctrl.SetToolTip(GUIText.REDDIT_SUBREDDIT_TOOLTIP)
         subreddit_sizer = wx.BoxSizer(wx.HORIZONTAL)
         subreddit_sizer.Add(subreddit_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-        subreddit_sizer.Add(subreddit_info, 0, wx.ALIGN_CENTRE_VERTICAL)
         subreddit_sizer.Add(self.subreddit_ctrl, 1, wx.EXPAND)
         datasetconfig_sizer.Add(subreddit_sizer, 0, wx.ALL|wx.EXPAND, 5)
 
@@ -99,26 +93,19 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
         #choose type of dataset to retrieve
         dataset_type_sizer = wx.BoxSizer(wx.HORIZONTAL)
         dataset_type_label = wx.StaticText(self, label=GUIText.TYPE+" ")
-        info_text = GUIText.REDDIT_DISCUSSIONS +" - " + GUIText.REDDIT_DISCUSSIONS_TOOLTIP + "\n"\
-                    ""+GUIText.REDDIT_SUBMISSIONS +" - " + GUIText.REDDIT_SUBMISSIONS_TOOLTIP + "\n"\
-                    ""+GUIText.REDDIT_COMMENTS +" - " + GUIText.REDDIT_COMMENTS_TOOLTIP
-        dataset_type_info = GenericGUIs.InfoIcon(self, info_text)
         self.dataset_type_choice = wx.Choice(self, choices=[GUIText.REDDIT_DISCUSSIONS,
                                                             GUIText.REDDIT_SUBMISSIONS,
                                                             GUIText.REDDIT_COMMENTS])
         self.dataset_type_choice.Bind(wx.EVT_CHOICE, self.OnDatasetTypeChosen)
         dataset_type_sizer.Add(dataset_type_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-        dataset_type_sizer.Add(dataset_type_info, 0, wx.ALIGN_CENTRE_VERTICAL)
         dataset_type_sizer.Add(self.dataset_type_choice)
         h_sizer.Add(dataset_type_sizer, 0, wx.ALL, 5)
 
         language_label = wx.StaticText(self, label=GUIText.LANGUAGE+" ")
-        #language_info = GenericGUIs.InfoIcon(self, GUIText.LANGUAGE_TOOLTIP)
         self.language_ctrl = wx.Choice(self, choices=Constants.AVAILABLE_DATASET_LANGUAGES2)
         self.language_ctrl.Select(0)
         language_sizer = wx.BoxSizer(wx.HORIZONTAL)
         language_sizer.Add(language_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-        #language_sizer.Add(language_type_info, 0, wx.ALIGN_CENTRE_VERTICAL)
         language_sizer.Add(self.language_ctrl)
         h_sizer.Add(language_sizer, 0, wx.ALL, 5)
 
@@ -128,80 +115,54 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
         sizer.Add(dataconstraints_sizer, 0, wx.ALL|wx.EXPAND, 5)
 
         start_date_label = wx.StaticText(self, label=GUIText.START_DATE+" ")
-        start_date_info = GenericGUIs.InfoIcon(self, GUIText.START_DATE_TOOLTIP)
         self.start_date_ctrl = wx.adv.DatePickerCtrl(self, name="startDate",
                                                 style=wx.adv.DP_DROPDOWN|wx.adv.DP_SHOWCENTURY)
         self.start_date_ctrl.SetToolTip(GUIText.START_DATE_TOOLTIP)
         end_date_label = wx.StaticText(self, label=GUIText.END_DATE+" ")
-        end_date_info = GenericGUIs.InfoIcon(self, GUIText.END_DATE_TOOLTIP)
         self.end_date_ctrl = wx.adv.DatePickerCtrl(self, name="endDate",
                                               style=wx.adv.DP_DROPDOWN|wx.adv.DP_SHOWCENTURY)
         self.end_date_ctrl.SetToolTip(GUIText.END_DATE_TOOLTIP)
         date_sizer = wx.BoxSizer(wx.HORIZONTAL)
         date_sizer.Add(start_date_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-        date_sizer.Add(start_date_info, 0, wx.ALIGN_CENTRE_VERTICAL)
         date_sizer.Add(self.start_date_ctrl)
         date_sizer.AddSpacer(10)
         date_sizer.Add(end_date_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-        date_sizer.Add(end_date_info, 0, wx.ALIGN_CENTRE_VERTICAL)
         date_sizer.Add(self.end_date_ctrl)
         dataconstraints_sizer.Add(date_sizer, 0, wx.ALL, 5)
 
         #TODO enhance integration of search to allow complex queries (currently only supports literial string entered in text box)
         search_label = wx.StaticText(self, label=GUIText.REDDIT_CONTAINS_TEXT+"(Optional) ")
-        search_info = GenericGUIs.InfoIcon(self, GUIText.REDDIT_CONTAINS_TEXT_TOOLTIP)
         self.search_ctrl = wx.TextCtrl(self)
         search_sizer = wx.BoxSizer(wx.HORIZONTAL)
         search_sizer.Add(search_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-        search_sizer.Add(search_info, 0, wx.ALIGN_CENTRE_VERTICAL)
         search_sizer.Add(self.search_ctrl, 1, wx.EXPAND)
         dataconstraints_sizer.Add(search_sizer, 0, wx.ALL|wx.EXPAND, 5)
 
         #control the subsource of where data is retrieved from
-        source_box = wx.StaticBox(self, label=GUIText.SOURCE)
-        source_box.SetFont(main_frame.DETAILS_LABEL_FONT)
-        source_sizer = wx.StaticBoxSizer(source_box, wx.VERTICAL)
         self.update_pushshift_radioctrl = wx.RadioButton(self, label=GUIText.REDDIT_UPDATE_PUSHSHIFT, style=wx.RB_GROUP)
         self.update_pushshift_radioctrl.SetToolTip(GUIText.REDDIT_UPDATE_PUSHSHIFT_TOOLTIP)
         self.update_pushshift_radioctrl.SetValue(True)
-        update_pushshift_info = GenericGUIs.InfoIcon(self, GUIText.REDDIT_UPDATE_PUSHSHIFT_TOOLTIP)
-        update_pushshift_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        update_pushshift_sizer.Add(self.update_pushshift_radioctrl)
-        update_pushshift_sizer.Add(update_pushshift_info, 0, wx.ALIGN_CENTER_VERTICAL)
-        source_sizer.Add(update_pushshift_sizer, 0, wx.ALL, 5)
         #TODO add ability to dynamically update from reddit information like Score
         #self.update_redditapi_radioctrl = wx.RadioButton(self, label=GUIText.REDDIT_API)
         #self.update_redditapi_radioctrl.SetToolTipString(GUIText.REDDIT_UPDATE_REDDITAPI_TOOLTIP)
-        #update_redditapi_info = GenericGUIs.InfoIcon(self, GUIText.REDDIT_UPDATE_REDDITAPI_TOOLTIP)
-        #update_redditapi_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        #update_redditapi_sizer.Add(self.update_redditapi_radioctrl)
-        #update_redditapi_sizer.Add(update_redditapi_info, 0, wx.ALIGN_CENTER_VERTICAL)
-        #source_sizer.Add(update_redditapi_sizer, 0, wx.ALL, 5)
         #self.full_redditapi_radioctrl = wx.RadioButton(self, label=GUIText.REDDIT_API)
         #self.full_redditapi_radioctrl.SetToolTipString(GUIText.REDDIT_FULL_REDDITAPI_TOOLTIP)
-        #full_redditapi_info = GenericGUIs.InfoIcon(self, GUIText.REDDIT_FULL_REDDITAPI_TOOLTIP)
-        #full_redditapi_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        #full_redditapi_sizer.Add(self.full_redditapi_radioctrl)
-        #full_redditapi_sizer.Add(full_redditapi_info, 0, wx.ALIGN_CENTER_VERTICAL)
-        #source_sizer.Add(full_redditapi_sizer, 0, wx.ALL, 5)
         self.archived_radioctrl = wx.RadioButton(self, label=GUIText.REDDIT_ARCHIVED)
         self.archived_radioctrl.SetToolTip(GUIText.REDDIT_ARCHIVED_TOOLTIP)
-        archived_info = GenericGUIs.InfoIcon(self, GUIText.REDDIT_ARCHIVED_TOOLTIP)
-        archived_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        archived_sizer.Add(self.archived_radioctrl)
-        archived_sizer.Add(archived_info, 0, wx.ALIGN_CENTER_VERTICAL)
-        source_sizer.Add(archived_sizer, 0, wx.ALL, 5)
         self.full_pushshift_radioctrl = wx.RadioButton(self, label=GUIText.REDDIT_FULL_PUSHSHIFT)
         self.full_pushshift_radioctrl.SetToolTip(GUIText.REDDIT_FULL_PUSHSHIFT_TOOLTIP)
-        full_pushshift_info = GenericGUIs.InfoIcon(self, GUIText.REDDIT_FULL_PUSHSHIFT_TOOLTIP)
-        full_pushshift_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        full_pushshift_sizer.Add(self.full_pushshift_radioctrl)
-        full_pushshift_sizer.Add(full_pushshift_info, 0, wx.ALIGN_CENTER_VERTICAL)
-        source_sizer.Add(full_pushshift_sizer, 0, wx.ALL, 5)
+
+        source_box = wx.StaticBox(self, label=GUIText.SOURCE)
+        source_box.SetFont(main_frame.DETAILS_LABEL_FONT)
+        source_sizer = wx.StaticBoxSizer(source_box, wx.VERTICAL)
+        source_sizer.Add(self.update_pushshift_radioctrl, 0, wx.ALL, 5)
+        #source_sizer.Add(self.update_redditapi_radioctrl)
+        #source_sizer.Add(self.full_redditapi_radioctrl)
+        source_sizer.Add(self.archived_radioctrl, 0, wx.ALL, 5)
+        source_sizer.Add(self.full_pushshift_radioctrl, 0, wx.ALL, 5)
         sizer.Add(source_sizer, 0, wx.ALL|wx.EXPAND, 5)
 
         label_fields_label = wx.StaticText(self, label=GUIText.LABEL_FIELDS)
-        label_fields_info = GenericGUIs.InfoIcon(self, GUIText.LABEL_FIELDS_TOOLTIP)
         self.label_fields_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT)
         self.label_fields_ctrl.AppendColumn(GUIText.FIELD)
         self.label_fields_ctrl.AppendColumn(GUIText.DESCRIPTION)
@@ -209,10 +170,7 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
         self.label_fields_ctrl.SetToolTip(GUIText.LABEL_FIELDS_TOOLTIP)
         self.label_fields_ctrl.EnableCheckBoxes()
         label_fields_sizer = wx.BoxSizer(wx.VERTICAL)
-        label_fields_sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        label_fields_sizer2.Add(label_fields_label)
-        label_fields_sizer2.Add(label_fields_info)
-        label_fields_sizer.Add(label_fields_sizer2, 0, wx.ALL)
+        label_fields_sizer.Add(label_fields_label, 0, wx.ALL)
         label_fields_sizer.Add(self.label_fields_ctrl, 1, wx.EXPAND)
         if main_frame.options_dict['adjustable_label_fields_mode']:
             sizer.Add(label_fields_sizer, 1, wx.ALL|wx.EXPAND, 5)
@@ -220,7 +178,6 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
             label_fields_sizer.ShowItems(False)
 
         computational_fields_label = wx.StaticText(self, label=GUIText.COMPUTATIONAL_FIELDS)
-        computational_fields_info = GenericGUIs.InfoIcon(self, GUIText.COMPUTATIONAL_FIELDS_TOOLTIP)
         self.computational_fields_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT)
         self.computational_fields_ctrl.AppendColumn(GUIText.FIELD)
         self.computational_fields_ctrl.AppendColumn(GUIText.DESCRIPTION)
@@ -228,10 +185,7 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
         self.computational_fields_ctrl.SetToolTip(GUIText.COMPUTATIONAL_FIELDS_TOOLTIP)
         self.computational_fields_ctrl.EnableCheckBoxes()
         computational_fields_sizer = wx.BoxSizer(wx.VERTICAL)
-        computational_fields_sizer2 = wx.BoxSizer(wx.HORIZONTAL)
-        computational_fields_sizer2.Add(computational_fields_label)
-        computational_fields_sizer2.Add(computational_fields_info)
-        computational_fields_sizer.Add(computational_fields_sizer2, 0, wx.ALL)
+        computational_fields_sizer.Add(computational_fields_label, 0, wx.ALL)
         computational_fields_sizer.Add(self.computational_fields_ctrl, 1, wx.EXPAND)
         if main_frame.options_dict['adjustable_computation_fields_mode']:
             sizer.Add(computational_fields_sizer, 1, wx.ALL|wx.EXPAND, 5)
@@ -260,12 +214,6 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
         ethics_sizer.Add(ethics_reddit_sizer, 0, wx.ALL, 5)
         self.ethics_pushshift_ctrl = wx.CheckBox(self, label=GUIText.ETHICS_CONFIRMATION+GUIText.ETHICS_PUSHSHIFT)
         ethics_sizer.Add(self.ethics_pushshift_ctrl, 0, wx.ALL, 5)
-        self.ethics_pushshift2_ctrl = wx.CheckBox(self, label=GUIText.ETHICS_CONFIRMATION+GUIText.ETHICS_PUSHSHIFT2)
-        ethics_pushshift2_url = wx.adv.HyperlinkCtrl(self, label="3", url=GUIText.ETHICS_PUSHSHIFT2_URL)
-        ethics_pushshift2_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        ethics_pushshift2_sizer.Add(self.ethics_pushshift2_ctrl)
-        ethics_pushshift2_sizer.Add(ethics_pushshift2_url)
-        ethics_sizer.Add(ethics_pushshift2_sizer, 0, wx.ALL, 5)
         sizer.Add(ethics_sizer, 0, wx.ALL, 5)
 
         #Retriever button to collect the requested data
@@ -335,7 +283,6 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
         if subreddit == "":
             error_messages.append(GUIText.REDDIT_SUBREDDIT_MISSING_ERROR)
             logger.warning('No subreddit entered')
-            subreddits = []
         else:
             subreddits = str(subreddit).split(',')
             if len(subreddits) > 0:
@@ -411,8 +358,6 @@ class RedditDatasetRetrieverDialog(AbstractRetrieverDialog):
             logger.warning('Ethics not checked')
         if not self.ethics_pushshift_ctrl.IsChecked():
             error_messages.append(GUIText.ETHICS_CONFIRMATION_MISSING_ERROR+GUIText.ETHICS_PUSHSHIFT)
-        if not self.ethics_pushshift2_ctrl.IsChecked():
-            error_messages.append(GUIText.ETHICS_CONFIRMATION_MISSING_ERROR+GUIText.ETHICS_PUSHSHIFT2)
             logger.warning('Ethics not checked')
 
         if len(error_messages) == 0:
@@ -452,12 +397,10 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
         main_frame = wx.GetApp().GetTopWindow()
         if main_frame.options_dict['multipledatasets_mode']:
             name_label = wx.StaticText(self, label=GUIText.NAME + ": ")
-            name_info = GenericGUIs.InfoIcon(self, GUIText.NAME_TOOLTIP)
             self.name_ctrl = wx.TextCtrl(self)
             self.name_ctrl.SetToolTip(GUIText.NAME_TOOLTIP)
             name_sizer = wx.BoxSizer(wx.HORIZONTAL)
             name_sizer.Add(name_label)
-            name_sizer.Add(name_info)
             name_sizer.Add(self.name_ctrl)
             sizer.Add(name_sizer, 0, wx.ALL, 5)
 
@@ -480,36 +423,29 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
         sizer.Add(ethics_sizer, 0, wx.ALL, 5)
 
         consumer_key_label = wx.StaticText(self, label=GUIText.CONSUMER_KEY + ": ")
-        consumer_key_info = GenericGUIs.InfoIcon(self, GUIText.CONSUMER_KEY_TOOLTIP)
         self.consumer_key_ctrl = wx.TextCtrl(self)
         if 'twitter_consumer_key' in main_frame.options_dict:
             self.consumer_key_ctrl.SetValue(main_frame.options_dict['twitter_consumer_key'])
         self.consumer_key_ctrl.SetToolTip(GUIText.CONSUMER_KEY_TOOLTIP)
         consumer_key_sizer = wx.BoxSizer(wx.HORIZONTAL)
         consumer_key_sizer.Add(consumer_key_label)
-        consumer_key_sizer.Add(consumer_key_info)
         consumer_key_sizer.Add(self.consumer_key_ctrl, wx.EXPAND)
         sizer.Add(consumer_key_sizer, 0, wx.EXPAND | wx.ALL, 5)
     
         consumer_secret_label = wx.StaticText(self, label=GUIText.CONSUMER_SECRET + ": ")
-        consumer_secret_info = GenericGUIs.InfoIcon(self, GUIText.CONSUMER_SECRET_TOOLTIP)
         self.consumer_secret_ctrl = wx.TextCtrl(self)
         if 'twitter_consumer_secret' in main_frame.options_dict:
             self.consumer_secret_ctrl.SetValue(main_frame.options_dict['twitter_consumer_secret'])
         self.consumer_secret_ctrl.SetToolTip(GUIText.CONSUMER_SECRET_TOOLTIP)
         consumer_secret_sizer = wx.BoxSizer(wx.HORIZONTAL)
         consumer_secret_sizer.Add(consumer_secret_label)
-        consumer_secret_sizer.Add(consumer_secret_info)
         consumer_secret_sizer.Add(self.consumer_secret_ctrl, wx.EXPAND)
         sizer.Add(consumer_secret_sizer, 0, wx.EXPAND | wx.ALL, 5)
-
-        self.search_by_map = []
 
         # search by query
         self.query_radioctrl = wx.RadioButton(self, label=GUIText.TWITTER_QUERY+": ", style=wx.RB_GROUP)
         self.query_radioctrl.SetToolTip(GUIText.TWITTER_QUERY_RADIOBUTTON_TOOLTIP)
         self.query_radioctrl.SetValue(True)
-        query_info = GenericGUIs.InfoIcon(self, GUIText.TWITTER_QUERY_RADIOBUTTON_TOOLTIP)
 
         self.query_hyperlink_ctrl = wx.adv.HyperlinkCtrl(self, label="2", url=GUIText.TWITTER_QUERY_HYPERLINK)
 
@@ -524,13 +460,11 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
 
         query_sizer = wx.BoxSizer(wx.HORIZONTAL)
         query_sizer.Add(self.query_radioctrl)
-        query_sizer.Add(query_info)
         query_sizer.Add(query_items_sizer, wx.EXPAND)
 
         # search by tweet attributes
         self.attributes_radioctrl = wx.RadioButton(self, label=GUIText.TWITTER_TWEET_ATTRIBUTES+": ")
         self.attributes_radioctrl.SetToolTip(GUIText.TWITTER_TWEET_ATTRIBUTES_RADIOBUTTON_TOOLTIP)
-        attributes_info = GenericGUIs.InfoIcon(self, GUIText.TWITTER_TWEET_ATTRIBUTES_RADIOBUTTON_TOOLTIP)
 
         self.keywords_checkbox_ctrl = wx.CheckBox(self, label=GUIText.TWITTER_KEYWORDS+": ")
         self.keywords_ctrl = wx.TextCtrl(self)
@@ -562,13 +496,9 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
         attributes_options_sizer.Add(account_sizer, 0, wx.EXPAND)
         
         attributes_sizer = wx.BoxSizer(wx.VERTICAL)
-        attributes_sizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        attributes_sizer1.Add(self.attributes_radioctrl)
-        attributes_sizer1.Add(attributes_info)
-        attributes_sizer.Add(attributes_sizer1)
+        attributes_sizer.Add(self.attributes_radioctrl)
         attributes_sizer.Add(attributes_options_sizer, 0, wx.EXPAND)
 
-        
         # add 'search by' elements to box
         search_box = wx.StaticBox(self, label=GUIText.REDDIT_SEARCH_BY)
         self.search_by_sizer = wx.StaticBoxSizer(search_box, wx.VERTICAL)
@@ -576,12 +506,11 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
         self.search_by_sizer.Add(attributes_sizer, 0, wx.EXPAND)
 
         # enable only the selected 'search by' option
-        self.search_by_map.append([self.query_radioctrl, query_items_sizer])
-        self.search_by_map.append([self.attributes_radioctrl, attributes_options_sizer])
-        self.query_radioctrl.Bind(wx.EVT_RADIOBUTTON, self.EnableOnlySelected)
-        self.attributes_radioctrl.Bind(wx.EVT_RADIOBUTTON, self.EnableOnlySelected)
-        self.EnableOnlySelected(None)
-
+        self.EnableOnlySelected(self.search_by_sizer)
+        for search_by_option in self.search_by_sizer:
+            option_sizer = search_by_option.GetSizer()
+            # bind to each radiobutton
+            option_sizer.GetChildren()[0].GetWindow().Bind(wx.EVT_RADIOBUTTON, lambda event: self.EnableOnlySelected(self.search_by_sizer))
         sizer.Add(self.search_by_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         # retweets checkbox
@@ -600,23 +529,19 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
         date_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         start_date_label = wx.StaticText(self, label=GUIText.START_DATE+" ("+GUIText.UTC+")"+": ")
-        start_date_info = GenericGUIs.InfoIcon(self, GUIText.START_DATE_TOOLTIP)
         self.start_date_ctrl = wx.adv.DatePickerCtrl(self, name="startDate",
                                                 style=wx.adv.DP_DROPDOWN|wx.adv.DP_SHOWCENTURY)
         self.start_date_ctrl.SetToolTip(GUIText.START_DATE_TOOLTIP)
         start_date_sizer = wx.BoxSizer(wx.HORIZONTAL)
         start_date_sizer.Add(start_date_label)
-        start_date_sizer.Add(start_date_info)
         start_date_sizer.Add(self.start_date_ctrl)
 
         end_date_label = wx.StaticText(self, label=GUIText.END_DATE+" ("+GUIText.UTC+")"+": ")
-        end_date_info = GenericGUIs.InfoIcon(self, GUIText.END_DATE_TOOLTIP)
         self.end_date_ctrl = wx.adv.DatePickerCtrl(self, name="endDate",
                                               style=wx.adv.DP_DROPDOWN|wx.adv.DP_SHOWCENTURY)
         self.end_date_ctrl.SetToolTip(GUIText.END_DATE_TOOLTIP)
         end_date_sizer = wx.BoxSizer(wx.HORIZONTAL)
         end_date_sizer.Add(end_date_label)
-        end_date_sizer.Add(end_date_info)
         end_date_sizer.Add(self.end_date_ctrl)
 
         date_sizer.Add(start_date_sizer, 0, wx.EXPAND, 5)
@@ -629,7 +554,6 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
         sizer.Add(notice, 0, wx.EXPAND | wx.ALL, 5)
         
         label_fields_label = wx.StaticText(self, label=GUIText.LABEL_FIELDS)
-        label_fields_info = GenericGUIs.InfoIcon(self, GUIText.LABEL_FIELDS_TOOLTIP)
         self.label_fields_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT)
         self.label_fields_ctrl.AppendColumn(GUIText.FIELD)
         self.label_fields_ctrl.AppendColumn(GUIText.DESCRIPTION)
@@ -638,7 +562,6 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
         self.label_fields_ctrl.EnableCheckBoxes()
         label_fields_sizer = wx.BoxSizer(wx.HORIZONTAL)
         label_fields_sizer.Add(label_fields_label, 0, wx.ALL)
-        label_fields_sizer.Add(label_fields_info, 0, wx.ALL)
         label_fields_sizer.Add(self.label_fields_ctrl, 1, wx.EXPAND)
         if main_frame.options_dict['adjustable_label_fields_mode']:
             sizer.Add(label_fields_sizer, 0, wx.ALL|wx.EXPAND, 5)
@@ -646,7 +569,6 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
             label_fields_sizer.ShowItems(False)
 
         computational_fields_label = wx.StaticText(self, label=GUIText.COMPUTATIONAL_FIELDS)
-        computational_fields_info = GenericGUIs.InfoIcon(self, GUIText.COMPUTATIONAL_FIELDS_TOOLTIP)
         self.computational_fields_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT)
         self.computational_fields_ctrl.AppendColumn(GUIText.FIELD)
         self.computational_fields_ctrl.AppendColumn(GUIText.DESCRIPTION)
@@ -655,7 +577,6 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
         self.computational_fields_ctrl.EnableCheckBoxes()
         computational_fields_sizer = wx.BoxSizer(wx.HORIZONTAL)
         computational_fields_sizer.Add(computational_fields_label, 0, wx.ALL)
-        computational_fields_sizer.Add(computational_fields_info, 0, wx.ALL)
         computational_fields_sizer.Add(self.computational_fields_ctrl, 1, wx.EXPAND)
         if main_frame.options_dict['adjustable_computation_fields_mode']:
             sizer.Add(computational_fields_sizer, 0, wx.ALL|wx.EXPAND, 5)
@@ -762,25 +683,26 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
 
         auth = tweepy.OAuthHandler(keys['consumer_key'], keys['consumer_secret'])
         api = tweepy.API(auth)
-        #valid_credentials = False
-        #try:
-        #    valid_credentials = api.verify_credentials() # throws an error if user credentials are insufficient
-        #    if not valid_credentials:
-        #        wx.MessageBox(GUIText.INVALID_CREDENTIALS_ERROR,
-        #                    GUIText.ERROR, wx.OK | wx.ICON_ERROR)
-        #        logger.warning('Invalid credentials')
-        #        status_flag = False 
-        #except tweepy.errors.TweepyException as e:
-        #    if 403 in e.api_codes:
+        valid_credentials = False
+        try:
+            valid_credentials = api.verify_credentials() # throws an error if user credentials are insufficient
+            if not valid_credentials:
+                wx.MessageBox(GUIText.INVALID_CREDENTIALS_ERROR,
+                          GUIText.ERROR, wx.OK | wx.ICON_ERROR)
+                logger.warning('Invalid credentials')
+                status_flag = False 
+        except tweepy.error.TweepError as e:
+            if e.api_code == 220:
                 #TODO: once user auth is implemented, verify user credentials are sufficient (input for valid user credentials still need to be added)
-        #        pass
+                pass
                 # wx.MessageBox(GUIText.INSUFFICIENT_CREDENTIALS_ERROR,
                 #             GUIText.ERROR, wx.OK | wx.ICON_ERROR)
                 # logger.warning('User credentials do not allow access to this resource.')
                 # status_flag = False         
 
+        search_by_options = self.GetOptionsInRadioGroup(self.search_by_sizer)
         selected_option = None
-        for option in self.search_by_map:
+        for option in search_by_options:
             if option[0].GetValue():
                 selected_option = option
                 break
@@ -839,8 +761,7 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
         logger.info("Query: "+query)
 
         if not main_frame.options_dict['multipledatasets_mode']:
-            #TODO temporary fix for special character issue
-            name = re.sub('[^A-Za-z0-9]+', '', query)
+            name = query
 
         start_date = str(self.start_date_ctrl.GetValue().Format("%Y-%m-%d"))
         end_date = str(self.end_date_ctrl.GetValue().Format("%Y-%m-%d"))
@@ -928,12 +849,26 @@ class TwitterDatasetRetrieverDialog(AbstractRetrieverDialog):
                 if isinstance(elem, wx.adv.HyperlinkCtrl):
                     elem.SetNormalColour(wx.Colour(wx.BLUE))
                 elem.Enable()
+    
+    # given an options_list_sizer, where each immediate child is an option sizer,
+    # and each option sizer contains a radio button and a corresponding sizer,
+    # returns an array of tuples (radio button + corresponding sizer)
+    def GetOptionsInRadioGroup(self, options_list_sizer):
+        options = []
+        for option in options_list_sizer.GetChildren(): 
+            tuple = []
+            option_sizer = option.GetSizer() # should have 2 elements: a radiobutton and its corresponding sizer
+            tuple.append(option_sizer.GetChildren()[0].GetWindow())
+            tuple.append(option_sizer.GetChildren()[1].GetSizer())
+            options.append(tuple)
+        return options
 
     # given a sizer containing a list of option sizers
     # enables option corresponding to selected radiobutton,
     # and disables the rest of the options            
-    def EnableOnlySelected(self, event):
-        for option in self.search_by_map:
+    def EnableOnlySelected(self, options_list_sizer):
+        options = self.GetOptionsInRadioGroup(options_list_sizer)
+        for option in options:
             if option[0].GetValue():
                 self.EnableSizer(option[1])
             else:
@@ -958,12 +893,10 @@ class CSVDatasetRetrieverDialog(AbstractRetrieverDialog):
 
         if main_frame.options_dict['multipledatasets_mode']:
             name_label = wx.StaticText(self, label=GUIText.NAME + " ")
-            name_info = GenericGUIs.InfoIcon(self, GUIText.NAME_TOOLTIP)
             self.name_ctrl = wx.TextCtrl(self)
             self.name_ctrl.SetToolTip(GUIText.NAME_TOOLTIP)
             self.name_sizer = wx.BoxSizer(wx.HORIZONTAL)
             self.name_sizer.Add(name_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-            self.name_sizer.Add(name_info, 0, wx.ALIGN_CENTRE_VERTICAL)
             self.name_sizer.Add(self.name_ctrl)
             sizer.Add(self.name_sizer, 0, wx.ALL, 5)
         
@@ -984,12 +917,10 @@ class CSVDatasetRetrieverDialog(AbstractRetrieverDialog):
         datasetconfig_sizer.Add(self.filename_sizer, 0, wx.ALL|wx.EXPAND, 5)
 
         id_field_label = wx.StaticText(self, label=GUIText.CSV_IDFIELD+" ")
-        id_field_info = GenericGUIs.InfoIcon(self, GUIText.CSV_IDFIELD_TOOLTIP)
         self.id_field_ctrl = wx.Choice(self, choices=[GUIText.CSV_IDFIELD_DEFAULT])
         self.id_field_ctrl.SetToolTip(GUIText.CSV_IDFIELD_TOOLTIP)
         self.id_field_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.id_field_sizer.Add(id_field_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-        self.id_field_sizer.Add(id_field_info, 0, wx.ALIGN_CENTRE_VERTICAL)
         self.id_field_sizer.Add(self.id_field_ctrl)
         datasetconfig_sizer.Add(self.id_field_sizer, 0, wx.ALL, 5)
 
@@ -1008,60 +939,46 @@ class CSVDatasetRetrieverDialog(AbstractRetrieverDialog):
 
         if main_frame.options_dict['multipledatasets_mode']:
             dataset_field_label = wx.StaticText(self, label=GUIText.CSV_DATASETFIELD+"(Optional) ")
-            dataset_field_info = GenericGUIs.InfoIcon(self, GUIText.CSV_DATASETFIELD_TOOLTIP)
             self.dataset_field_ctrl = wx.Choice(self, choices=[])
             self.dataset_field_ctrl.SetToolTip(GUIText.CSV_DATASETFIELD_TOOLTIP)
             dataset_field_sizer = wx.BoxSizer(wx.HORIZONTAL)
             dataset_field_sizer.Add(dataset_field_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-            dataset_field_sizer.Add(dataset_field_info, 0, wx.ALIGN_CENTRE_VERTICAL)
             dataset_field_sizer.Add(self.dataset_field_ctrl)
             datafields_sizer.Add(dataset_field_sizer, 0, wx.ALL, 5)
         
         url_field_label = wx.StaticText(self, label=GUIText.CSV_URLFIELD+"(Optional) ")
-        url_field_info = GenericGUIs.InfoIcon(self, GUIText.CSV_URLFIELD_TOOLTIP)
         self.url_field_ctrl = wx.Choice(self, choices=[""])
         self.url_field_ctrl.SetToolTip(GUIText.CSV_URLFIELD_TOOLTIP)
         url_field_sizer = wx.BoxSizer(wx.HORIZONTAL)
         url_field_sizer.Add(url_field_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-        url_field_sizer.Add(url_field_info, 0, wx.ALIGN_CENTRE_VERTICAL)
         url_field_sizer.Add(self.url_field_ctrl)
         datafields_sizer.Add(url_field_sizer, 0, wx.ALL, 5)
 
         datetime_field_label = wx.StaticText(self, label=GUIText.CSV_DATETIMEFIELD+"(Optional) ")
-        datetime_field_info = GenericGUIs.InfoIcon(self, GUIText.CSV_DATETIMEFIELD_TOOLTIP)
         self.datetime_field_ctrl = wx.Choice(self, choices=[""])
         self.datetime_field_ctrl.SetToolTip(GUIText.CSV_DATETIMEFIELD_TOOLTIP)
         self.datetime_tz_ctrl = wx.Choice(self, choices=pytz.all_timezones)
         datetime_field_sizer = wx.BoxSizer(wx.HORIZONTAL)
         datetime_field_sizer.Add(datetime_field_label, 0, wx.ALIGN_CENTRE_VERTICAL)
-        datetime_field_sizer.Add(datetime_field_info, 0, wx.ALIGN_CENTRE_VERTICAL)
         datetime_field_sizer.Add(self.datetime_field_ctrl)
         datetime_field_sizer.Add(self.datetime_tz_ctrl)
         datafields_sizer.Add(datetime_field_sizer, 0, wx.ALL, 5)
 
         label_fields_first_label = wx.StaticText(self, label=GUIText.LABEL_FIELDS)
-        label_fields_first_info = GenericGUIs.InfoIcon(self, GUIText.LABEL_FIELDS_TOOLTIP)
         self.label_fields_first_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT|wx.LC_NO_HEADER)
         self.label_fields_first_ctrl.AppendColumn(GUIText.FIELD)
         self.label_fields_first_ctrl.SetToolTip(GUIText.LABEL_FIELDS_TOOLTIP)
         self.label_fields_first_ctrl.EnableCheckBoxes()
         label_fields_first_sizer = wx.BoxSizer(wx.VERTICAL)
-        label_fields_first_sizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        label_fields_first_sizer1.Add(label_fields_first_label)
-        label_fields_first_sizer1.Add(label_fields_first_info)
-        label_fields_first_sizer.Add(label_fields_first_sizer1)
+        label_fields_first_sizer.Add(label_fields_first_label)
         label_fields_first_sizer.Add(self.label_fields_first_ctrl, 1, wx.EXPAND)
         label_fields_combined_label = wx.StaticText(self, label=GUIText.COMBINED_LABEL_FIELDS)
-        label_fields_combined_info = GenericGUIs.InfoIcon(self, GUIText.COMBINED_LABEL_FIELDS_TOOLTIP)
         self.label_fields_combined_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT|wx.LC_NO_HEADER)
         self.label_fields_combined_ctrl.AppendColumn(GUIText.FIELD)
         self.label_fields_combined_ctrl.SetToolTip(GUIText.COMBINED_LABEL_FIELDS_TOOLTIP)
         self.label_fields_combined_ctrl.EnableCheckBoxes()
         label_fields_combined_sizer = wx.BoxSizer(wx.VERTICAL)
-        label_fields_combined_sizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        label_fields_combined_sizer1.Add(label_fields_combined_label)
-        label_fields_combined_sizer1.Add(label_fields_combined_info)
-        label_fields_combined_sizer.Add(label_fields_combined_sizer1)
+        label_fields_combined_sizer.Add(label_fields_combined_label)
         label_fields_combined_sizer.Add(self.label_fields_combined_ctrl, 1, wx.EXPAND)
         label_fields_sizer = wx.BoxSizer(wx.HORIZONTAL)
         label_fields_sizer.Add(label_fields_first_sizer, 1, wx.EXPAND)
@@ -1069,28 +986,20 @@ class CSVDatasetRetrieverDialog(AbstractRetrieverDialog):
         sizer.Add(label_fields_sizer, 1, wx.EXPAND|wx.ALL, 5)
 
         computation_fields_first_label = wx.StaticText(self, label=GUIText.COMPUTATIONAL_FIELDS)
-        computation_fields_first_info = GenericGUIs.InfoIcon(self, GUIText.COMPUTATIONAL_FIELDS_TOOLTIP)
         self.computation_fields_first_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT|wx.LC_NO_HEADER)
         self.computation_fields_first_ctrl.AppendColumn(GUIText.FIELD)
         self.computation_fields_first_ctrl.SetToolTip(GUIText.COMPUTATIONAL_FIELDS_TOOLTIP)
         self.computation_fields_first_ctrl.EnableCheckBoxes()
         computation_fields_first_sizer = wx.BoxSizer(wx.VERTICAL)
-        computation_fields_first_sizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        computation_fields_first_sizer1.Add(computation_fields_first_label)
-        computation_fields_first_sizer1.Add(computation_fields_first_info)
-        computation_fields_first_sizer.Add(computation_fields_first_sizer1)
+        computation_fields_first_sizer.Add(computation_fields_first_label)
         computation_fields_first_sizer.Add(self.computation_fields_first_ctrl, 1, wx.EXPAND)
         computation_fields_combined_label = wx.StaticText(self, label=GUIText.COMBINED_COMPUTATIONAL_FIELDS)
-        computation_fields_combined_info = GenericGUIs.InfoIcon(self, GUIText.COMBINED_COMPUTATIONAL_FIELDS_TOOLTIP)
         self.computation_fields_combined_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT|wx.LC_NO_HEADER)
         self.computation_fields_combined_ctrl.AppendColumn(GUIText.FIELD)
         self.computation_fields_combined_ctrl.SetToolTip(GUIText.COMBINED_COMPUTATIONAL_FIELDS_TOOLTIP)
         self.computation_fields_combined_ctrl.EnableCheckBoxes()
         computation_fields_combined_sizer = wx.BoxSizer(wx.VERTICAL)
-        computation_fields_combined_sizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        computation_fields_combined_sizer1.Add(computation_fields_combined_label)
-        computation_fields_combined_sizer1.Add(computation_fields_combined_info)
-        computation_fields_combined_sizer.Add(computation_fields_combined_sizer1)
+        computation_fields_combined_sizer.Add(computation_fields_combined_label)
         computation_fields_combined_sizer.Add(self.computation_fields_combined_ctrl, 1, wx.EXPAND)
         computation_fields_sizer = wx.BoxSizer(wx.HORIZONTAL)
         computation_fields_sizer.Add(computation_fields_first_sizer, 1, wx.EXPAND)

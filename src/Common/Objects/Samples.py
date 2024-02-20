@@ -278,7 +278,7 @@ class TopicSample(Sample):
                     if isinstance(self.parts_dict[topic].parts_dict[subtopic], Part) and topic != 'unknown':
                         UpdateLDATopicPart(topic)
         
-        unknown_list = list(set(self._tokensets) - document_set)
+        unknown_list = set(self._tokensets) - document_set
         unknown_df = document_topic_prob_df[document_topic_prob_df.index.isin(unknown_list)]
         unknown_series = unknown_df.max(axis=1).sort_values()
         new_unknown_list = list(unknown_series.index.values)
@@ -330,7 +330,7 @@ class LDASample(TopicSample):
     def eta(self):
         return self._eta
 
-    def GenerateStart(self, notify_window, current_workspace_path, start_dt, pool_num):
+    def GenerateStart(self, notify_window, current_workspace_path, start_dt):
         logger = logging.getLogger(__name__+"."+repr(self)+".GenerateStart")
         logger.info("Starting")
         self.start_dt = start_dt
@@ -341,8 +341,7 @@ class LDASample(TopicSample):
                                                                 self.num_topics,
                                                                 self._num_passes,
                                                                 self.alpha,
-                                                                self.eta,
-                                                                pool_num)
+                                                                self.eta)
         logger.info("Finished")
     
     def GenerateFinish(self, result, dataset, current_workspace):
@@ -420,7 +419,7 @@ class BitermSample(TopicSample):
     def num_passes(self):
         return self._num_passes
     
-    def GenerateStart(self, notify_window, current_workspace_path, start_dt, pool_num):
+    def GenerateStart(self, notify_window, current_workspace_path, start_dt):
         logger = logging.getLogger(__name__+"."+repr(self)+".GenerateStart")
         logger.info("Starting")
         self.start_dt = start_dt
@@ -509,7 +508,7 @@ class NMFSample(TopicSample):
     def __repr__(self):
         return 'NMFSample[%s][%s]' % (self.name, self.key,)
     
-    def GenerateStart(self, notify_window, current_workspace_path, start_dt, pool_num):
+    def GenerateStart(self, notify_window, current_workspace_path, start_dt):
         logger = logging.getLogger(__name__+"."+repr(self)+".GenerateStart")
         logger.info("Starting")
         self.start_dt = start_dt
@@ -585,6 +584,212 @@ class NMFSample(TopicSample):
             with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/nmf_model.pk', 'wb') as outfile:
                 pickle.dump(self.model, outfile)
         logger.info("Finished")
+
+
+
+class Top2VecSample(TopicSample):
+    def __init__(self, name, dataset_key, model_parameters):
+        TopicSample.__init__(self, name, dataset_key, "Top2Vec", model_parameters)
+
+        #fixed properties that may be externally accessed but do not change after being initialized
+
+        #these need to be removed before pickling during saving due to threading and use of multiple processes
+        #see __getstate__ for removal and Load and Reload for readdition
+        self.training_thread = None
+        self.vectorizer = None
+        self.transformed_texts = None
+        self.model = None
+
+    def __getstate__(self):
+        state = dict(self.__dict__)
+        state['training_thread'] = None
+        state['vectorizer'] = None
+        state['transformed_texts'] = None
+        state['model'] = None
+        return state
+
+    def __repr__(self):
+        return 'Top2VecSample[%s][%s]' % (self.name, self.key,)
+    
+    def GenerateStart(self, notify_window, current_workspace_path, start_dt):
+        logger = logging.getLogger(__name__+"."+repr(self)+".GenerateStart")
+        logger.info("Starting")
+        self.start_dt = start_dt
+        self.training_thread = SamplesThreads.Top2VecTrainingThread(notify_window,
+                                                                   current_workspace_path,
+                                                                   self.key,
+                                                                   self.tokensets,
+                                                                   self.num_topics)
+        logger.info("Finished")
+    
+    def GenerateFinish(self, result, dataset, current_workspace):
+        logger = logging.getLogger(__name__+"."+repr(self)+".GenerateFinish")
+        logger.info("Starting")
+        self.generated_flag = True
+        self.training_thread.join()
+        self.training_thread = None
+        self._tokensets = list(self.tokensets.keys())
+        with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf_vectorizer.pk', 'rb') as infile:
+           self.vectorizer = pickle.load(infile)
+        with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf.pk', 'rb') as infile:
+            self.transformed_texts = pickle.load(infile)
+        with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/top2vec_model.pk', 'rb') as infile:
+            self.model = pickle.load(infile)
+
+        self.document_topic_prob = result['document_topic_prob']
+
+        for i in range(self.num_topics):
+            topic_num = i+1
+            self.parts_dict[topic_num] = Top2VecTopicPart(self, topic_num, dataset)
+        self.parts_dict['unknown'] = TopicUnknownPart(self, 'unknown', [], dataset)
+
+        self.word_num = 10
+        self.ApplyDocumentCutoff()
+        
+        self.end_dt = datetime.now()
+        logger.info("Finished")
+
+    def OldLoad(self, workspace_path):
+        logger = logging.getLogger(__name__+"."+repr(self)+".Load")
+        logger.info("Starting")
+        self._workspace_path = workspace_path
+        if self.generated_flag:
+            with bz2.BZ2File(self._workspace_path+self.filedir+'/tfidf_vectorizer.pk', 'rb') as infile:
+                self.vectorizer = pickle.load(infile)
+            with bz2.BZ2File(self._workspace_path+self.filedir+'/tfidf.pk', 'rb') as infile:
+                self.transformed_texts = pickle.load(infile)
+            with bz2.BZ2File(self._workspace_path+self.filedir+'/top2vec_model.pk', 'rb') as infile:
+                self._model = pickle.load(infile)
+        logger.info("Finished")
+
+    def Load(self, current_workspace):
+        logger = logging.getLogger(__name__+"."+repr(self)+".Load")
+        logger.info("Starting")
+        if self.generated_flag:
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf_vectorizer.pk', 'rb') as infile:
+                self.vectorizer = pickle.load(infile)
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf.pk', 'rb') as infile:
+                self.transformed_texts = pickle.load(infile)
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/top2vec_model.pk', 'rb') as infile:
+                self._model = pickle.load(infile)
+        logger.info("Finished")
+
+    def Save(self, current_workspace):
+        logger = logging.getLogger(__name__+"."+repr(self)+".Save")
+        logger.info("Starting")
+        if self.vectorizer is not None:
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf_vectorizer.pk', 'wb') as outfile:
+                pickle.dump(self.vectorizer, outfile)
+        if self.transformed_texts is not None:
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf.pk', 'wb') as outfile:
+                pickle.dump(self.transformed_texts, outfile)
+        if self.model is not None:
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/top2vec_model.pk', 'wb') as outfile:
+                pickle.dump(self.model, outfile)
+        logger.info("Finished")
+
+
+class BertopicSample(TopicSample):
+    def __init__(self, name, dataset_key, model_parameters):
+        TopicSample.__init__(self, name, dataset_key, "Bertopic", model_parameters)
+
+        #fixed properties that may be externally accessed but do not change after being initialized
+
+        #these need to be removed before pickling during saving due to threading and use of multiple processes
+        #see __getstate__ for removal and Load and Reload for readdition
+        self.training_thread = None
+        self.vectorizer = None
+        self.transformed_texts = None
+        self.model = None
+
+    def __getstate__(self):
+        state = dict(self.__dict__)
+        state['training_thread'] = None
+        state['vectorizer'] = None
+        state['transformed_texts'] = None
+        state['model'] = None
+        return state
+
+    def __repr__(self):
+        return 'BertopicSample[%s][%s]' % (self.name, self.key,)
+    
+    def GenerateStart(self, notify_window, current_workspace_path, start_dt):
+        logger = logging.getLogger(__name__+"."+repr(self)+".GenerateStart")
+        logger.info("Starting")
+        self.start_dt = start_dt
+        self.training_thread = SamplesThreads.BertopicTrainingThread(notify_window,
+                                                                   current_workspace_path,
+                                                                   self.key,
+                                                                   self.tokensets,
+                                                                   self.num_topics)
+        logger.info("Finished")
+    
+    def GenerateFinish(self, result, dataset, current_workspace):
+        logger = logging.getLogger(__name__+"."+repr(self)+".GenerateFinish")
+        logger.info("Starting")
+        self.generated_flag = True
+        self.training_thread.join()
+        self.training_thread = None
+        self._tokensets = list(self.tokensets.keys())
+        with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf_vectorizer.pk', 'rb') as infile:
+           self.vectorizer = pickle.load(infile)
+        with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf.pk', 'rb') as infile:
+            self.transformed_texts = pickle.load(infile)
+        with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/Bertopic_model.pk', 'rb') as infile:
+            self.model = pickle.load(infile)
+
+        self.document_topic_prob = result['document_topic_prob']
+
+        for i in range(self.num_topics):
+            topic_num = i+1
+            self.parts_dict[topic_num] = BertopicTopicPart(self, topic_num, dataset)
+        self.parts_dict['unknown'] = TopicUnknownPart(self, 'unknown', [], dataset)
+
+        self.word_num = 10
+        self.ApplyDocumentCutoff()
+        
+        self.end_dt = datetime.now()
+        logger.info("Finished")
+
+    def OldLoad(self, workspace_path):
+        logger = logging.getLogger(__name__+"."+repr(self)+".Load")
+        logger.info("Starting")
+        self._workspace_path = workspace_path
+        if self.generated_flag:
+            with bz2.BZ2File(self._workspace_path+self.filedir+'/tfidf_vectorizer.pk', 'rb') as infile:
+                self.vectorizer = pickle.load(infile)
+            with bz2.BZ2File(self._workspace_path+self.filedir+'/tfidf.pk', 'rb') as infile:
+                self.transformed_texts = pickle.load(infile)
+            with bz2.BZ2File(self._workspace_path+self.filedir+'/Bertopic_model.pk', 'rb') as infile:
+                self._model = pickle.load(infile)
+        logger.info("Finished")
+
+    def Load(self, current_workspace):
+        logger = logging.getLogger(__name__+"."+repr(self)+".Load")
+        logger.info("Starting")
+        if self.generated_flag:
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf_vectorizer.pk', 'rb') as infile:
+                self.vectorizer = pickle.load(infile)
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf.pk', 'rb') as infile:
+                self.transformed_texts = pickle.load(infile)
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/Bertopic_model.pk', 'rb') as infile:
+                self._model = pickle.load(infile)
+        logger.info("Finished")
+
+    def Save(self, current_workspace):
+        logger = logging.getLogger(__name__+"."+repr(self)+".Save")
+        logger.info("Starting")
+        if self.vectorizer is not None:
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf_vectorizer.pk', 'wb') as outfile:
+                pickle.dump(self.vectorizer, outfile)
+        if self.transformed_texts is not None:
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/tfidf.pk', 'wb') as outfile:
+                pickle.dump(self.transformed_texts, outfile)
+        if self.model is not None:
+            with bz2.BZ2File(current_workspace+"/Samples/"+self.key+'/Bertopic_model.pk', 'wb') as outfile:
+                pickle.dump(self.model, outfile)
+        logger.info("Finished")
+        
 
 class MergedPart(GenericObject):
     def __init__(self, parent, key, name=None):
@@ -871,6 +1076,66 @@ class NMFTopicPart(TopicPart):
         self._word_num = value
         logger.info("Finished")
 
+
+class Top2VecTopicPart(TopicPart):
+    @property
+    def word_num(self):
+        return self._word_num
+    
+    @word_num.setter
+    def word_num(self, value):
+        logger = logging.getLogger(__name__ + ".Top2VecTopicPart[" + str(self.key) + "].word_num")
+        logger.info("Starting")
+        if len(self.word_list) < value:
+            self.word_list.clear()
+            try:
+                # Retrieve the Top2Vec model from the parent object
+                top2vec_model = self.parent.parent.model  # Assuming this is how you access the Top2Vec model
+                
+                # Get topics and keywords from the Top2Vec model
+                topics, probs, _ = top2vec_model.get_topics(num_topics=value)
+                
+                # Iterate over topics and add top words to word_list
+                for topic_idx, topic in enumerate(topics):
+                    word_prob_list = list(zip(topic, probs[topic_idx]))
+                    self.word_list.extend(word_prob_list)
+            except Exception as e:
+                print("Error:", e)
+                logger.error("Error occurred: %s", e)
+        self._word_num = value
+        logger.info("Finished")
+
+
+class BertopicTopicPart(TopicPart):
+    @property
+    def word_num(self):
+        return self._word_num
+    
+    @word_num.setter
+    def word_num(self, value):
+        logger = logging.getLogger(__name__ + ".BertopicTopicPart[" + str(self.key) + "].word_num")
+        logger.info("Starting")
+        if len(self.word_list) < value:
+            self.word_list.clear()
+            try:
+                # Retrieve the Bertopic model from the parent object
+                bertopic_model = self.parent.parent.model  # Assuming this is how you access the Bertopic model
+                
+                # Get topics and keywords from the Bertopic model
+                topics, probs = bertopic_model.get_topics(num_topics=value)
+                
+                # Iterate over topics and add top words to word_list
+                for topic_idx, topic in enumerate(topics):
+                    word_prob_list = list(zip(topic, probs[topic_idx]))
+                    self.word_list.extend(word_prob_list)
+            except Exception as e:
+                print("Error:", e)
+                logger.error("Error occurred: %s", e)
+        self._word_num = value
+        logger.info("Finished")
+
+
+
 class TopicUnknownPart(ModelPart):
     '''Instances of Topic Unknown Part objects'''
     def __init__(self, parent, key, word_list, dataset, name="Unknown"):
@@ -896,3 +1161,4 @@ class TopicUnknownPart(ModelPart):
 
     def GetTopicKeywordsList(self):
         return []
+

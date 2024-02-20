@@ -52,8 +52,8 @@ class SamplingNotebook(FNB.FlatNotebook):
         page = self.GetPage(selection)
 
         if page != self.create_page:
-            old_name = page.sample.name
-            with wx.TextEntryDialog(self, GUIText.SAMPLE_NAME_LABEL, value=old_name) as dialog:
+            old_key = page.sample.key
+            with wx.TextEntryDialog(self, GUIText.SAMPLE_NAME_LABEL, value=old_key) as dialog:
                 ok_button = wx.FindWindowById(wx.ID_OK, dialog)
                 ok_button.SetLabel(GUIText.SAMPLE_CHANGE_NAME_LABEL)
                 if dialog.ShowModal() == wx.ID_OK:
@@ -64,7 +64,8 @@ class SamplingNotebook(FNB.FlatNotebook):
                                       GUIText.ERROR, wx.OK | wx.ICON_ERROR)
                         logger.warning('name field is empty')
                     else:
-                        page.sample.name = new_name
+                        sample = main_frame.samples.pop(old_key)
+                        sample.name = new_name
                         self.SetPageText(selection, new_name)
                         main_frame.SamplesUpdated()
                         #hook this up to allow toggle of sample specific actions
@@ -100,7 +101,7 @@ class SamplingNotebook(FNB.FlatNotebook):
         selection = event.GetSelection()
         page = self.GetPage(selection)
         if page.sample.key in main_frame.samples:
-            confirm_dialog = wx.MessageDialog(self, str(page.sample.name)+GUIText.DELETE_CONFIRMATION+GUIText.DELETE_SAMPLE_WARNING,
+            confirm_dialog = wx.MessageDialog(self, str(page.sample)+GUIText.DELETE_CONFIRMATION+GUIText.DELETE_SAMPLE_WARNING,
                                               GUIText.CONFIRM_REQUEST, wx.ICON_QUESTION | wx.OK | wx.CANCEL)
             confirm_dialog.SetOKCancelLabels(GUIText.DELETE_SAMPLE_LABEL, GUIText.SKIP)
             if confirm_dialog.ShowModal() == wx.ID_OK:
@@ -142,6 +143,12 @@ class SamplingNotebook(FNB.FlatNotebook):
                     new_sample_panel = SamplesGUIs.TopicSamplePanel(self, sample, main_frame.datasets[sample.dataset_key], size=self.GetSize())
                     new_sample_panel.Load({})
                 elif sample.sample_type == "NMF":
+                    new_sample_panel = SamplesGUIs.TopicSamplePanel(self, sample, main_frame.datasets[sample.dataset_key], size=self.GetSize())
+                    new_sample_panel.Load({})
+                elif sample.sample_type == "Top2Vec":
+                    new_sample_panel = SamplesGUIs.TopicSamplePanel(self, sample, main_frame.datasets[sample.dataset_key], size=self.GetSize())
+                    new_sample_panel.Load({})
+                elif sample.sample_type == "Bertopic":
                     new_sample_panel = SamplesGUIs.TopicSamplePanel(self, sample, main_frame.datasets[sample.dataset_key], size=self.GetSize())
                     new_sample_panel.Load({})
                 if new_sample_panel is not None:

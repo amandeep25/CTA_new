@@ -69,6 +69,7 @@ class SampleCreatePanel(wx.Panel):
         create_lda_sizer.Add(create_lda_description, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
         create_lda_link = wx.adv.HyperlinkCtrl(self, label="2", url=GUIText.LDA_URL)
         create_lda_sizer.Add(create_lda_link, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+
         create_biterm_sizer = wx.BoxSizer(wx.HORIZONTAL)
         topicmodel_sizer.Add(create_biterm_sizer)
         create_biterm_button = wx.Button(self, label=GUIText.BITERM_LABEL)
@@ -79,6 +80,7 @@ class SampleCreatePanel(wx.Panel):
         create_biterm_sizer.Add(create_biterm_description, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
         create_biterm_link = wx.adv.HyperlinkCtrl(self, label="3", url=GUIText.BITERM_URL)
         create_biterm_sizer.Add(create_biterm_link, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+
         create_nmf_sizer = wx.BoxSizer(wx.HORIZONTAL)
         topicmodel_sizer.Add(create_nmf_sizer)
         create_nmf_button = wx.Button(self, label=GUIText.NMF_LABEL)
@@ -89,7 +91,8 @@ class SampleCreatePanel(wx.Panel):
         create_nmf_sizer.Add(create_nmf_description, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
         create_nmf_link = wx.adv.HyperlinkCtrl(self, label="4", url=GUIText.NMF_URL) 
         create_nmf_sizer.Add(create_nmf_link, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
-        
+
+        create_top2vec_sizer = wx.BoxSizer(wx.HORIZONTAL)
         topicmodel_sizer.Add(create_top2vec_sizer)
         create_top2vec_button = wx.Button(self, label=GUIText.TOP2VEC_LABEL)
         create_top2vec_button.SetToolTip(GUIText.CREATE_TOP2VEC_TOOLTIP)
@@ -100,6 +103,7 @@ class SampleCreatePanel(wx.Panel):
         create_top2vec_link = wx.adv.HyperlinkCtrl(self, label="4", url=GUIText.TOP2VEC_URL) 
         create_top2vec_sizer.Add(create_top2vec_link, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
 
+        create_bertopic_sizer = wx.BoxSizer(wx.HORIZONTAL)
         topicmodel_sizer.Add(create_bertopic_sizer)
         create_bertopic_button = wx.Button(self, label=GUIText.BERTOPIC_LABEL)
         create_bertopic_button.SetToolTip(GUIText.CREATE_BERTOPIC_TOOLTIP)

@@ -99,7 +99,7 @@ class Common:
     THEMES = "Themes"
     NUMBER_OF_CODES = "# of Codes"
 
-    SIZE_WARNING_MSG = "WARNING: may take some time for large datasets"
+    SIZE_WARNING_MSG = "WARNING: The app might take some time for large datasets"
     TOTAL_TIME_LABEL = "Total Time:"
     CURRENT_STEP_LABEL = "Current Step: "
     CURRENT_STEP_TIME_LABEL = "Current Step Time:"
@@ -114,7 +114,7 @@ class Common:
 
 class Main(Common):
     APP_NAME = "Computational Thematic Analysis Toolkit"
-    NEW_WORKSPACE_NAME = "New_Workspace"
+    NEW_WORKSPACE_NAME = "New_Workspace_latest"
 
     NEW_WARNING = "You have unsaved changes."\
                   "\nAre you sure you want to creating a new workspace?"\

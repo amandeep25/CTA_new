@@ -231,7 +231,7 @@ class CodesViewCtrl(dv.DataViewCtrl):
 
     def OnShowPopup(self, event):
         menu = wx.Menu()
-        copy_menuitem = menu.Append(wx.ID_ANY, GUIText.COPY)
+        copy_menuitem = menu.Append(wx.ID_COPY, GUIText.COPY)
         self.Bind(wx.EVT_MENU, self.OnCopyItems, copy_menuitem)
         if isinstance(self.GetModel(), CodesViewModel):
             self.selected_item = event.GetItem()
@@ -557,7 +557,7 @@ class ObjectCodesViewCtrl(dv.DataViewCtrl):
 
     def OnShowPopup(self, event):
         menu = wx.Menu()
-        copy_menuitem = menu.Append(wx.ID_ANY, GUIText.COPY)
+        copy_menuitem = menu.Append(wx.ID_COPY, GUIText.COPY)
         self.Bind(wx.EVT_MENU, self.OnCopyItems, copy_menuitem)
         if isinstance(self.GetModel(), CodesViewModel):
             self.selected_item = event.GetItem()
@@ -730,9 +730,6 @@ class CodeConnectionsViewModel(dv.PyDataViewModel):
         main_frame = wx.GetApp().GetTopWindow()
         self.datasets = main_frame.datasets
         self.samples = main_frame.samples
-
-        self.connection_objs = {}
-
         self.UseWeakRefs(True)
     
     def UpdateColumnNames(self):
@@ -771,35 +768,24 @@ class CodeConnectionsViewModel(dv.PyDataViewModel):
         # item, so we'll use the genre objects as its children and they will
         # end up being the collection of visible roots in our tree.
         objs = self.code.GetConnections(self.datasets, self.samples)
-        objs_dict = dict(zip([obj.key for obj in objs], objs))
         if not parent:
-            for dataset_key in self.datasets:
-                include_flag = False
-                for doc_key in self.datasets[dataset_key].selected_documents:
-                    if doc_key in objs_dict:
-                        include_flag = True
-                        break
-                if include_flag:
-                    child_item = self.ObjectToItem(self.datasets[dataset_key])
-                    children.append(child_item)
-            for sample_key in self.samples:
-                include_flag = False
-                for doc_key in self.samples[sample_key].selected_documents:
-                    if doc_key in objs_dict:
-                        include_flag = True
-                        break
-                if include_flag:
-                    child_item = self.ObjectToItem(self.samples[sample_key])
+            for obj in objs:
+                while obj.parent != None:
+                    obj = obj.parent
+                child_item = self.ObjectToItem(obj)
+                if child_item not in children:
                     children.append(child_item)
             return len(children)
         node = self.ItemToObject(parent)
-        if isinstance(node, Datasets.Dataset) or isinstance(node, Samples.Sample):
-            for key in objs_dict:
-                if key in node.selected_documents:
-                    connection_key = (node.key, objs_dict[key])
-                    if connection_key not in self.connection_objs:
-                        self.connection_objs[connection_key] = Generic.Connection(node, objs_dict[key])
-                    children.append(self.ObjectToItem(self.connection_objs[connection_key]))
+        if isinstance(node, Datasets.Dataset):
+            for key in node.documents:
+                if node.documents[key] in objs:
+                    children.append(self.ObjectToItem(node.documents[key]))
+            return len(children)
+        if isinstance(node, Samples.Sample):
+            for key in node.parts_dict:
+                if node.parts_dict[key] in objs:
+                    children.append(self.ObjectToItem(node.parts_dict[key]))
             return len(children)
         return 0
 
@@ -821,9 +807,9 @@ class CodeConnectionsViewModel(dv.PyDataViewModel):
         if not item:
             return dv.NullDataViewItem
         node = self.ItemToObject(item)
-        if isinstance(node, Datasets.Dataset) or isinstance(node, Samples.Sample):
+        if node.parent == None:
             return dv.NullDataViewItem
-        elif isinstance(node, Generic.Connection):
+        else:
             return self.ObjectToItem(node.parent)
 
     def GetValue(self, item, col):
@@ -835,14 +821,7 @@ class CodeConnectionsViewModel(dv.PyDataViewModel):
                        2 : "\U0001F6C8" if node.notes != "" else "",
                        }
             return mapper[col]
-        elif isinstance(node, Samples.Sample):
-            mapper = { 0 : node.name,
-                       1 : "",
-                       2 : "\U0001F6C8" if node.notes != "" else "",
-                       }
-            return mapper[col]
-        elif isinstance(node, Generic.Connection):
-            node = node.obj
+        elif isinstance(node, Datasets.Document):
             if node.url != "":
                 segmented_url = node.url.split("/")
                 if segmented_url[len(segmented_url)-1] != '':
@@ -851,8 +830,38 @@ class CodeConnectionsViewModel(dv.PyDataViewModel):
                     node_id = segmented_url[len(segmented_url)-2]
             else:
                 node_id = node.doc_id[2]
-            mapper = { 0 : "",
-                       1 : str(node_id),
+            mapper = { 0 : node_id,
+                       1 : "",
+                       2 : "\U0001F6C8" if node.notes != "" else "",
+                       }
+            return mapper[col]
+        elif isinstance(node, Samples.Sample):
+            mapper = { 0 : node.name,
+                       1 : "",
+                       2 : "\U0001F6C8" if node.notes != "" else "",
+                       }
+            return mapper[col]
+        elif isinstance(node, Samples.TopicMergedPart):
+            mapper = { 0 : repr(node),
+                       1 : "",
+                       2 : "\U0001F6C8" if node.notes != "" else "",
+                       }
+            return mapper[col]
+        elif isinstance(node, Samples.MergedPart):
+            mapper = { 0 : repr(node),
+                       1 : "",
+                       2 : "\U0001F6C8" if node.notes != "" else "",
+                       }
+            return mapper[col]
+        elif isinstance(node, Samples.TopicPart):
+            mapper = { 0 : repr(node),
+                       1 : "",
+                       2 : "\U0001F6C8" if node.notes != "" else "",
+                       }
+            return mapper[col]
+        elif isinstance(node, Samples.Part):
+            mapper = { 0 : repr(node),
+                       1 : "",
                        2 : "\U0001F6C8" if node.notes != "" else "",
                        }
             return mapper[col]
@@ -913,8 +922,7 @@ class CodeConnectionsViewCtrl(dv.DataViewCtrl):
         model = self.GetModel()
         node = model.ItemToObject(item)
         main_frame = wx.GetApp().GetTopWindow()
-        if isinstance(node, Generic.Connection):
-            node = node.obj
+        if isinstance(node, Datasets.Document):
             if node.key not in main_frame.document_dialogs:
                 main_frame.document_dialogs[node.key] = CodesGUIs.DocumentDialog(main_frame, node)
             main_frame.document_dialogs[node.key].Show()
@@ -1194,8 +1202,7 @@ class DocumentViewModel(dv.PyDataViewModel):
                             for part_item in sample_children:
                                 part_node = self.ItemToObject(part_item)
                                 if isinstance(part_node, Samples.Part):
-                                    part_children = []
-                                    self.GetChildren(part_item, part_children)
+                                    part_children = self.GetChildren(part_item, part_children)
                                     if item in part_children:
                                         return part_item
         return dv.NullDataViewItem
@@ -1389,7 +1396,7 @@ class DocumentViewCtrl(dv.DataViewCtrl):
         column.SetWidth(wx.COL_WIDTH_AUTOSIZE)
         remaining_width = remaining_width - column.GetWidth()
         column = self.GetColumn(col_count+1)
-        column.SetWidth(wx.COL_WIDTH_AUTOSIZE)
+        col_width = column.SetWidth(wx.COL_WIDTH_AUTOSIZE)
         remaining_width = remaining_width - column.GetWidth()
         col = 0
         for column in self.GetColumns():
@@ -1398,7 +1405,6 @@ class DocumentViewCtrl(dv.DataViewCtrl):
                 col_width = column.GetWidth()
                 if col_width > remaining_width/(col_count-col):
                     col_width = remaining_width/(col_count-col)
-                    col_width = int(col_width)
                     column.SetWidth(col_width)
                 remaining_width = remaining_width - col_width
             else:
@@ -1495,7 +1501,7 @@ class DocumentViewCtrl(dv.DataViewCtrl):
         model = self.GetModel()
         for row in self.GetSelections():
             line = ''
-            for col in range(0, len(model.label_column_names)):
+            for col in range(0, model.label_column_names):
                 line = line + str(model.GetValue(row, col)) + '\t'
             selected_items.append(line.strip())
         clipdata = wx.TextDataObject()
@@ -1784,7 +1790,7 @@ class ThemesViewCtrl(dv.DataViewCtrl):
 
     def OnShowPopup(self, event):
         menu = wx.Menu()
-        copy_menuitem = menu.Append(wx.ID_ANY, GUIText.COPY)
+        copy_menuitem = menu.Append(wx.ID_COPY, GUIText.COPY)
         self.Bind(wx.EVT_MENU, self.OnCopyItems, copy_menuitem)
         menu.AppendSeparator()
         if isinstance(self.GetModel(), ThemesViewModel):
@@ -2281,7 +2287,8 @@ class DocumentPositionsViewCtrl(dv.DataViewCtrl):
 
     def OnShowPopup(self, event):
         menu = wx.Menu()
-        copy_menuitem = menu.Append(wx.ID_ANY, GUIText.COPY)
+        copy_menuitem = menu.Append(wx.ID_COPY,
+                                    GUIText.COPY)
         self.Bind(wx.EVT_MENU, self.OnCopyItems, copy_menuitem)
         self.PopupMenu(menu)
 
@@ -2531,7 +2538,8 @@ class SelectedQuotationsViewCtrl(dv.DataViewCtrl):
 
     def OnShowPopup(self, event):
         menu = wx.Menu()
-        copy_menuitem = menu.Append(wx.ID_ANY, GUIText.COPY)
+        copy_menuitem = menu.Append(wx.ID_COPY,
+                                    GUIText.COPY)
         self.Bind(wx.EVT_MENU, self.OnCopyItems, copy_menuitem)
         item = event.GetItem()
         model = self.GetModel()

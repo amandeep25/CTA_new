@@ -132,4 +132,4 @@ class Connection(object):
             key = (self.parent.key, self.obj.key)
         else:
             key = (self.obj.key,)
-        return key
+        return key 

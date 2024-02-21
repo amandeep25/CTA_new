@@ -420,3 +420,4 @@ class ChordPlotPanel(wx.Panel):
                 categorized_docs.update(list(topic_docs_df.index.values))
 
         logger.info("Finished")
+

@@ -105,14 +105,8 @@ def RetrieveMonth(auth, name, query, month, end_date, prefix):
                             data.append(entry)
                             break
         data.insert(0, id_dict)
-        path = os.path.join(Constants.DATA_PATH,'Twitter')
-        if not os.path.exists(path):
-            os.makedirs(path) 
-        path = os.path.join(Constants.DATA_PATH,'Twitter', name)
-        if not os.path.exists(path):
-            os.makedirs(path)
         file_path = os.path.join(Constants.DATA_PATH,'Twitter', name, prefix+month+'.json')
-        with open(file_path, 'w', encoding="utf-8") as outfile:
+        with open(file_path, 'w') as outfile:
             json.dump(data, outfile)
     logger.info("Finished")
     return rate_limit_reached
@@ -122,7 +116,7 @@ def UpdateRetrievedMonth(auth, name, query, month, end_date, file, prefix):
     logger.info("Starting")
     data = []
     new_data = []
-    with open(file, 'r', encoding="utf-8") as infile:
+    with open(file, 'r') as infile:
         data = json.load(infile)
         id_dict = data.pop(0)
     if len(data) > 0:
@@ -171,14 +165,8 @@ def UpdateRetrievedMonth(auth, name, query, month, end_date, file, prefix):
                             data.append(entry)
                             break
         data.insert(0, id_dict)
-        path = os.path.join(Constants.DATA_PATH,'Twitter')
-        if not os.path.exists(path):
-            os.makedirs(path) 
-        path = os.path.join(Constants.DATA_PATH,'Twitter', name)
-        if not os.path.exists(path):
-            os.makedirs(path)
         file_path = os.path.join(Constants.DATA_PATH,'Twitter', name, prefix+month+'.json')
-        with open(file_path, 'w', encoding="utf-8") as outfile:
+        with open(file_path, 'w') as outfile:
             json.dump(data, outfile)
     logger.info("Finished")
     return rate_limit_reached
@@ -204,9 +192,9 @@ class TweepyRetriever():
         while (start < end):
             # 100 tweets per API request, and 450 requests/15 mins (usually only hits < 300 requests before reaching API limit though)
             if last_retrieved_id == None:
-                tweets_data = tweepy.Cursor(api.search_tweets, query, lang="en", until=end).items(100)
+                tweets_data = tweepy.Cursor(api.search, query, lang="en", until=end).items(100)
             else:
-                tweets_data = tweepy.Cursor(api.search_tweets, query, lang="en", until=end, max_id=last_retrieved_id-1).items(100)
+                tweets_data = tweepy.Cursor(api.search, query, lang="en", until=end, max_id=last_retrieved_id-1).items(100)
             # send requests for tweets while the rate limit has not been exceeded
             while (tweets_retrieved):
                 tweets_retrieved = False
@@ -221,10 +209,10 @@ class TweepyRetriever():
                         tweets_retrieved = True
 
                     if last_retrieved_id == None:
-                        tweets_data = tweepy.Cursor(api.search_tweets, query, lang="en", until=end).items(100)
+                        tweets_data = tweepy.Cursor(api.search, query, lang="en", until=end).items(100)
                     else:
-                        tweets_data = tweepy.Cursor(api.search_tweets, query, lang="en", until=end, max_id=last_retrieved_id-1).items(100)
-                except tweepy.errors.TweepyException as e:
+                        tweets_data = tweepy.Cursor(api.search, query, lang="en", until=end, max_id=last_retrieved_id-1).items(100)
+                except tweepy.error.TweepError as e:
                     if e.response.status_code == 429:
                         #TODO: remove when better api is configured
                         print("Twitter API rate limit reached.")
@@ -239,5 +227,7 @@ class TweepyRetriever():
             'rate_limit_reached': rate_limit_reached,
             'tweets': tweets,
         }
+
+        
 
         

@@ -409,3 +409,4 @@ class Document(GenericObject):
                         connection_objects.append(objects)
 
         return connection_objects
+        

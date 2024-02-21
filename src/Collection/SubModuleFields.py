@@ -38,21 +38,23 @@ class FieldsPanel(wx.Panel):
         self.label_fields_flg = label_fields_flg
         self.tokenization_thread = None
 
-        available_panel = wx.Panel(splitter)
-        available_sizer = wx.StaticBoxSizer(wx.VERTICAL, available_panel, GUIText.FIELDS_AVAILABLE_LABEL)
-        add_btn = wx.Button(available_panel, label=GUIText.ADD)
+        available_panel = wx.lib.scrolledpanel.ScrolledPanel(splitter)
+        available_sizer = wx.BoxSizer(wx.VERTICAL)
+        add_btn = wx.Button(self, label=GUIText.ADD)
         add_btn.SetToolTip(GUIText.FIELDS_ADD_TOOLTIP)
         add_btn.Bind(wx.EVT_BUTTON, self.OnAddFields)
         available_sizer.Add(add_btn, proportion=0, flag=wx.ALL, border=5)
+
         self.available_fields_model = DatasetsDataViews.AvailableFieldsViewModel(dataset)
         self.available_fields_ctrl = DatasetsDataViews.FieldsViewCtrl(available_panel, self.available_fields_model)
         available_sizer.Add(self.available_fields_ctrl, proportion=1, flag=wx.EXPAND, border=5)
         available_panel.SetSizer(available_sizer)
+        available_panel.SetupScrolling()
 
-        chosen_panel = wx.Panel(splitter)
-        chosen_sizer = wx.StaticBoxSizer(wx.VERTICAL, chosen_panel, GUIText.FIELDS_INCLUDED_LABEL)
+        chosen_panel = wx.lib.scrolledpanel.ScrolledPanel(splitter)
+        chosen_sizer = wx.BoxSizer(wx.VERTICAL)
         #TODO Rework to be set of buttons to avoid Windows to OSX compatibility issues
-        remove_btn = wx.Button(chosen_panel, label=GUIText.REMOVE)
+        remove_btn = wx.Button(self, label=GUIText.REMOVE)
         remove_btn.SetToolTip(GUIText.FIELDS_REMOVE_TOOLTIP)
         remove_btn.Bind(wx.EVT_BUTTON, self.OnRemoveFields)
         chosen_sizer.Add(remove_btn, proportion=0, flag=wx.ALL, border=5)
@@ -60,6 +62,7 @@ class FieldsPanel(wx.Panel):
         self.chosen_fields_ctrl = DatasetsDataViews.FieldsViewCtrl(chosen_panel, self.chosen_fields_model)
         chosen_sizer.Add(self.chosen_fields_ctrl, proportion=1, flag=wx.EXPAND, border=5)
         chosen_panel.SetSizer(chosen_sizer)
+        chosen_panel.SetupScrolling()
 
         splitter.SetMinimumPaneSize(20)
         splitter.SplitVertically(available_panel, chosen_panel)
@@ -71,8 +74,6 @@ class FieldsPanel(wx.Panel):
 
         CustomEvents.TOKENIZER_EVT_RESULT(self, self.OnTokenizerEnd)
         
-        self.Layout()
-
         logger.info("Finished")
 
     def OnAddFields(self, event):
@@ -84,7 +85,7 @@ class FieldsPanel(wx.Panel):
         def FieldAdder(field):
             add_flag = True
             if field.key in self.fields :
-                wx.MessageBox(GUIText.FIELDS_EXISTS_ERROR+str(node.name),
+                wx.MessageBox(GUIText.FIELDS_EXISTS_ERROR+str(node.key),
                               GUIText.WARNING, wx.OK | wx.ICON_WARNING)
             elif add_flag:
                 self.fields[field.key] = field
@@ -119,7 +120,7 @@ class FieldsPanel(wx.Panel):
                 FieldAdder(node)
         if len(tokenize_fields) > 0:
             main_frame.multiprocessing_inprogress_flag = True
-            self.tokenization_thread = DatasetsThreads.TokenizerThread(self, main_frame, self.dataset, tfidf_update=True)
+            self.tokenization_thread = DatasetsThreads.TokenizerThread(self, main_frame, self.dataset, rerun=True)
         elif performed_flag:
             self.OnTokenizerEnd(None)
         else:
@@ -133,6 +134,7 @@ class FieldsPanel(wx.Panel):
         main_frame = self.GetGrandParent().GetTopLevelParent()
         performed_flag = False
         tokenize_flag = False
+        db_conn = Database.DatabaseConnection(main_frame.current_workspace.name)
 
         def FieldRemover(field):
             item = self.chosen_fields_model.ObjectToItem(field)
@@ -157,13 +159,11 @@ class FieldsPanel(wx.Panel):
                                             freeze=True)
 
         main_frame.StepProgressDialog(GUIText.REMOVING_FIELDS_BUSY_LABEL)
-        db_conn = Database.DatabaseConnection(main_frame.current_workspace.name)
         for item in self.chosen_fields_ctrl.GetSelections():
             node = self.chosen_fields_model.ItemToObject(item)
             main_frame.PulseProgressDialog(GUIText.REMOVING_FIELDS_BUSY_MSG+str(node.name))
             if isinstance(node, Datasets.Field):
                 FieldRemover(node)
-        del db_conn
         if tokenize_flag:
             main_frame.multiprocessing_inprogress_flag = True
             self.tokenization_thread = DatasetsThreads.TokenizerThread(self, main_frame, self.dataset, tfidf_update=True)
@@ -202,3 +202,4 @@ class FieldsPanel(wx.Panel):
         saved_data = {}
         logger.info("Finished")
         return saved_data
+

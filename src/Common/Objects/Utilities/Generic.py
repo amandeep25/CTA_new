@@ -510,4 +510,4 @@ def BackgroundAndForegroundColour(colour_rgb):
         fg_colour = wx.Colour(0, 0, 0)
     else:
        fg_colour = wx.Colour(255, 255, 255)
-    return bg_colour, fg_colour
+    return bg_colour, fg_colour 

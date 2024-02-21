@@ -69,7 +69,6 @@ class TokenListCtrl(wx.ListCtrl):
             self.data = db_conn.GetIncludedStringTokens(self.dataset.key, self.search_term, self.sort_col, self.sort_ascending)
         else:
             self.data = db_conn.GetRemovedStringTokens(self.dataset.key, self.search_term, self.sort_col, self.sort_ascending)
-        del db_conn
         self.SetItemCount(len(self.data))
 
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
@@ -324,7 +323,6 @@ class DocumentListViewCtrl(dv.DataViewCtrl):
             col_width = column.GetWidth()
             if col_width > remaining_width/(col_count-col):
                 col_width = remaining_width/(col_count-col)
-                col_width = int(col_width)
                 column.SetWidth(col_width)
             remaining_width = remaining_width - col_width
             col = col + 1
@@ -404,7 +402,7 @@ class DocumentListViewCtrl(dv.DataViewCtrl):
         model = self.GetModel()
         for row in self.GetSelections():
             line = ''
-            for col in range(0, len(model.label_column_names)):
+            for col in range(0, model.label_column_names):
                 line = line + str(model.GetValue(row, col)) + '\t'
             selected_items.append(line.strip())
         clipdata = wx.TextDataObject()

@@ -1,4 +1,4 @@
-'''Constants for MachineThematicAnalysis Toolkit'''
+'''Constants for MachineThematicAnalysis Toolkit''' 
 import sys
 import os
 import shutil

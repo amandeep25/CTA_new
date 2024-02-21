@@ -89,6 +89,28 @@ class SampleCreatePanel(wx.Panel):
         create_nmf_sizer.Add(create_nmf_description, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
         create_nmf_link = wx.adv.HyperlinkCtrl(self, label="4", url=GUIText.NMF_URL) 
         create_nmf_sizer.Add(create_nmf_link, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        
+        topicmodel_sizer.Add(create_top2vec_sizer)
+        create_top2vec_button = wx.Button(self, label=GUIText.TOP2VEC_LABEL)
+        create_top2vec_button.SetToolTip(GUIText.CREATE_TOP2VEC_TOOLTIP)
+        self.Bind(wx.EVT_BUTTON, lambda event: self.OnStartCreateSample(event, 'Top2Vec'), create_top2vec_button)
+        create_top2vec_sizer.Add(create_top2vec_button, 0, wx.ALL, 5)
+        create_top2vec_description = wx.StaticText(self, label=GUIText.TOP2VEC_DESC)
+        create_top2vec_sizer.Add(create_top2vec_description, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        create_top2vec_link = wx.adv.HyperlinkCtrl(self, label="4", url=GUIText.TOP2VEC_URL) 
+        create_top2vec_sizer.Add(create_top2vec_link, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+
+        topicmodel_sizer.Add(create_bertopic_sizer)
+        create_bertopic_button = wx.Button(self, label=GUIText.BERTOPIC_LABEL)
+        create_bertopic_button.SetToolTip(GUIText.CREATE_BERTOPIC_TOOLTIP)
+        self.Bind(wx.EVT_BUTTON, lambda event: self.OnStartCreateSample(event, 'Bertopic'), create_bertopic_button)
+        create_bertopic_sizer.Add(create_bertopic_button, 0, wx.ALL, 5)
+        create_bertopic_description = wx.StaticText(self, label=GUIText.BERTOPIC_DESC)
+        create_bertopic_sizer.Add(create_bertopic_description, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        create_bertopic_link = wx.adv.HyperlinkCtrl(self, label="4", url=GUIText.BERTOPIC_URL) 
+        create_bertopic_sizer.Add(create_bertopic_link, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+
+
 
         
         #actions for different gui element's triggers
@@ -101,6 +123,7 @@ class SampleCreatePanel(wx.Panel):
     def OnStartCreateSample(self, event, model_type):
         logger = logging.getLogger(__name__+".SampleCreatePanel.OnStartCreateSample")
         logger.info("Starting")
+        parent_notebook = self.GetParent()
         main_frame = wx.GetApp().GetTopWindow()
                     
         new_sample = None
@@ -129,10 +152,23 @@ class SampleCreatePanel(wx.Panel):
             if status_flag:
                 self.Freeze()
                 main_frame.CreateProgressDialog(GUIText.GENERATING_DEFAULT_LABEL,
-                                    warning=GUIText.SIZE_WARNING_MSG,
+                                    warning=GUIText.GENERATE_WARNING+"\n"+GUIText.SIZE_WARNING_MSG,
                                     freeze=False)
                 main_frame.StepProgressDialog(GUIText.GENERATING_DEFAULT_MSG)
-                main_frame.AutoSaveStart(self.OnContinueCreateSample, [model_type, model_parameters])
+                name = model_parameters['name']
+                main_frame.PulseProgressDialog(GUIText.GENERATING_RANDOM_SUBLABEL+str(name))
+                dataset_key = model_parameters['dataset_key']
+                dataset = main_frame.datasets[dataset_key]
+                model_parameters['doc_ids'] = list(dataset.data.keys())
+                new_sample = Samples.RandomSample(name, dataset_key, model_parameters)
+                new_sample.Generate(dataset)
+                new_sample_panel = RandomSamplePanel(parent_notebook, new_sample, dataset, self.GetParent().GetSize())
+                main_frame.samples[new_sample.key] = new_sample
+                parent_notebook.InsertPage(len(parent_notebook.sample_panels), new_sample_panel, new_sample.name, select=True)
+                parent_notebook.sample_panels[new_sample.key] = new_sample_panel
+                main_frame.DocumentsUpdated(self)
+                main_frame.CloseProgressDialog(thaw=False)
+                self.Thaw()
         elif model_type == 'LDA':
             with LDAModelCreateDialog(self) as create_dialog:
                 if create_dialog.ShowModal() == wx.ID_OK:
@@ -144,7 +180,12 @@ class SampleCreatePanel(wx.Panel):
                     main_frame.StepProgressDialog(GUIText.GENERATING_DEFAULT_MSG)
                     self.start_dt = datetime.now()
                     model_parameters = create_dialog.model_parameters
-                    main_frame.AutoSaveStart(self.OnContinueCreateSample, [model_type, model_parameters])
+                    name = model_parameters['name']
+                    main_frame.PulseProgressDialog(GUIText.GENERATING_LDA_SUBLABEL+str(name))
+                    self.capture_thread = SamplesThreads.CaptureThread(self,
+                                                                       main_frame,
+                                                                       model_parameters,
+                                                                       model_type)
         elif model_type == 'Biterm':
             with BitermModelCreateDialog(self) as create_dialog:
                 if create_dialog.ShowModal() == wx.ID_OK:
@@ -155,7 +196,12 @@ class SampleCreatePanel(wx.Panel):
                     main_frame.StepProgressDialog(GUIText.GENERATING_DEFAULT_MSG)
                     self.start_dt = datetime.now()
                     model_parameters = create_dialog.model_parameters
-                    main_frame.AutoSaveStart(self.OnContinueCreateSample, [model_type, model_parameters])
+                    name = model_parameters['name']
+                    main_frame.PulseProgressDialog(GUIText.GENERATING_BITERM_SUBLABEL+str(name))
+                    self.capture_thread = SamplesThreads.CaptureThread(self,
+                                                                       main_frame,
+                                                                       model_parameters,
+                                                                       model_type)
         elif model_type == 'NMF':
             with NMFModelCreateDialog(self) as create_dialog:
                 if create_dialog.ShowModal() == wx.ID_OK:
@@ -166,48 +212,53 @@ class SampleCreatePanel(wx.Panel):
                     main_frame.StepProgressDialog(GUIText.GENERATING_DEFAULT_MSG)
                     self.start_dt = datetime.now()
                     model_parameters = create_dialog.model_parameters
-                    main_frame.AutoSaveStart(self.OnContinueCreateSample, [model_type, model_parameters])
-        logger.info("Finished")
+                    name = model_parameters['name']
+                    main_frame.PulseProgressDialog(GUIText.GENERATING_NMF_SUBLABEL+str(name))
+                    self.capture_thread = SamplesThreads.CaptureThread(self,
+                                                                       main_frame,
+                                                                       model_parameters,
+                                                                       model_type)
+                    
+        elif model_type == 'Top2Vec':
+            with Top2VecModelCreateDialog(self) as create_dialog:
+                if create_dialog.ShowModal() == wx.ID_OK:
+                    self.Freeze()
+                    main_frame.CreateProgressDialog(GUIText.GENERATING_DEFAULT_LABEL,
+                                                     warning=GUIText.GENERATE_WARNING+"\n"+GUIText.SIZE_WARNING_MSG,
+                                                     freeze=False)
+                    main_frame.StepProgressDialog(GUIText.GENERATING_DEFAULT_MSG)
+                    self.start_dt = datetime.now()
+                    model_parameters = create_dialog.model_parameters
+                    name = model_parameters['name']
+                    main_frame.PulseProgressDialog(GUIText.GENERATING_TOP2VEC_SUBLABEL+str(name))
+                    self.capture_thread = SamplesThreads.CaptureThread(self,
+                                                                       main_frame,
+                                                                       model_parameters,
+                                                                       model_type)
 
 
-    def OnContinueCreateSample(self, model_args):
-        logger = logging.getLogger(__name__+".SampleCreatePanel.OnContinueCreateSample")
-        logger.info("Starting")
-        parent_notebook = self.GetParent()
-        main_frame = wx.GetApp().GetTopWindow()
+        elif model_type == 'Bertopic':
+            with BertopicModelCreateDialog(self) as create_dialog:
+                if create_dialog.ShowModal() == wx.ID_OK:
+                    self.Freeze()
+                    main_frame.CreateProgressDialog(GUIText.GENERATING_DEFAULT_LABEL,
+                                                     warning=GUIText.GENERATE_WARNING+"\n"+GUIText.SIZE_WARNING_MSG,
+                                                     freeze=False)
+                    main_frame.StepProgressDialog(GUIText.GENERATING_DEFAULT_MSG)
+                    self.start_dt = datetime.now()
+                    model_parameters = create_dialog.model_parameters
+                    name = model_parameters['name']
+                    main_frame.PulseProgressDialog(GUIText.GENERATING_BERTOPIC_SUBLABEL+str(name))
+                    self.capture_thread = SamplesThreads.CaptureThread(self,
+                                                                       main_frame,
+                                                                       model_parameters,
+                                                                       model_type)
 
-        model_type = model_args[0]
-        model_parameters = model_args[1]
-        name = model_parameters['name']
-        if model_type == 'Random':
-            main_frame.PulseProgressDialog(GUIText.GENERATING_RANDOM_SUBLABEL+str(name))
-            dataset_key = model_parameters['dataset_key']
-            dataset = main_frame.datasets[dataset_key]
-            model_parameters['doc_ids'] = list(dataset.data.keys())
-            new_sample = Samples.RandomSample(name, dataset_key, model_parameters)
-            new_sample.Generate(dataset)
-            new_sample_panel = RandomSamplePanel(parent_notebook, new_sample, dataset, self.GetParent().GetSize())
-            main_frame.samples[new_sample.key] = new_sample
-            parent_notebook.InsertPage(len(parent_notebook.sample_panels), new_sample_panel, new_sample.name, select=True)
-            parent_notebook.sample_panels[new_sample.key] = new_sample_panel
-            main_frame.DocumentsUpdated(self)
-            main_frame.AutoSaveStart()
-            main_frame.CloseProgressDialog(thaw=False)
-            self.Thaw()
-        else:
-            if model_type == 'LDA':
-                main_frame.PulseProgressDialog(GUIText.GENERATING_LDA_SUBLABEL+str(name))
-                main_frame.statusbar.SetStatusText("\u24D8 LDA model - "+str(name)+" is generating. Do Not Close Application")
-            elif model_type == 'Biterm':
-                main_frame.PulseProgressDialog(GUIText.GENERATING_BITERM_SUBLABEL+str(name))
-                main_frame.statusbar.SetStatusText("\u24D8 Biterm model - "+str(name)+" is generating. Do Not Close Application")
-            elif model_type == 'NMF':
-                main_frame.PulseProgressDialog(GUIText.GENERATING_NMF_SUBLABEL+str(name))
-                main_frame.statusbar.SetStatusText("\u24D8 NMF model - "+str(name)+" is generating. Do Not Close Application")
-            self.capture_thread = SamplesThreads.CaptureThread(self,
-                                                            main_frame,
-                                                            model_parameters,
-                                                            model_type)
+
+
+
+
+                    
         logger.info("Finished")
 
     def OnFinishCreateSample(self, event):
@@ -235,7 +286,7 @@ class SampleCreatePanel(wx.Panel):
             new_sample.tokenization_package_versions = dataset.tokenization_package_versions
             new_sample_panel = TopicSamplePanel(parent_notebook, new_sample, dataset, self.GetParent().GetSize())  
             main_frame.samples[new_sample.key] = new_sample
-            new_sample.GenerateStart(new_sample_panel, main_frame.current_workspace.name, self.start_dt, main_frame.pool_num)
+            new_sample.GenerateStart(new_sample_panel, main_frame.current_workspace.name, self.start_dt)
             main_frame.StepProgressDialog(GUIText.GENERATING_LDA_MSG3)
             parent_notebook.InsertPage(len(parent_notebook.sample_panels), new_sample_panel, new_sample.name, select=True)
             parent_notebook.sample_panels[new_sample.key] = new_sample_panel
@@ -250,7 +301,7 @@ class SampleCreatePanel(wx.Panel):
             new_sample.tokenization_package_versions = dataset.tokenization_package_versions
             new_sample_panel = TopicSamplePanel(parent_notebook, new_sample, dataset, self.GetParent().GetSize())  
             main_frame.samples[new_sample.key] = new_sample
-            new_sample.GenerateStart(new_sample_panel, main_frame.current_workspace.name, self.start_dt, main_frame.pool_num)
+            new_sample.GenerateStart(new_sample_panel, main_frame.current_workspace.name, self.start_dt)
             main_frame.StepProgressDialog(GUIText.GENERATING_BITERM_MSG3)
             parent_notebook.InsertPage(len(parent_notebook.sample_panels), new_sample_panel, new_sample.name, select=True)
             parent_notebook.sample_panels[new_sample.key] = new_sample_panel
@@ -265,12 +316,49 @@ class SampleCreatePanel(wx.Panel):
             new_sample.tokenization_package_versions = dataset.tokenization_package_versions
             new_sample_panel = TopicSamplePanel(parent_notebook, new_sample, dataset, self.GetParent().GetSize())  
             main_frame.samples[new_sample.key] = new_sample
-            new_sample.GenerateStart(new_sample_panel, main_frame.current_workspace.name, self.start_dt, main_frame.pool_num)
+            new_sample.GenerateStart(new_sample_panel, main_frame.current_workspace.name, self.start_dt)
             main_frame.StepProgressDialog(GUIText.GENERATING_NMF_MSG3)
             parent_notebook.InsertPage(len(parent_notebook.sample_panels), new_sample_panel, new_sample.name, select=True)
             parent_notebook.sample_panels[new_sample.key] = new_sample_panel
             main_frame.CloseProgressDialog(message=GUIText.GENERATED_NMF_COMPLETED_PART1,
                                            thaw=False)
+
+
+
+        elif model_type == 'Top2Vec':
+            main_frame.PulseProgressDialog(GUIText.GENERATING_TOP2VEC_MSG2)
+            new_sample = Samples.Top2VecSample(name, dataset_key, model_parameters)
+            new_sample.fields_list = fields_list
+            new_sample.applied_filter_rules = copy.deepcopy(dataset.filter_rules)
+            new_sample.tokenization_choice = dataset.tokenization_choice
+            new_sample.tokenization_package_versions = dataset.tokenization_package_versions
+            new_sample_panel = TopicSamplePanel(parent_notebook, new_sample, dataset, self.GetParent().GetSize())  
+            main_frame.samples[new_sample.key] = new_sample
+            new_sample.GenerateStart(new_sample_panel, main_frame.current_workspace.name, self.start_dt)
+            main_frame.StepProgressDialog(GUIText.GENERATING_TOP2VEC_MSG3)
+            parent_notebook.InsertPage(len(parent_notebook.sample_panels), new_sample_panel, new_sample.name, select=True)
+            parent_notebook.sample_panels[new_sample.key] = new_sample_panel
+            main_frame.CloseProgressDialog(message=GUIText.GENERATED_TOP2VEC_COMPLETED_PART1, thaw=False)
+
+
+
+
+        elif model_type == 'Bertopic':
+            main_frame.PulseProgressDialog(GUIText.GENERATING_BERTOPIC_MSG2)
+            new_sample = Samples.BertopicSample(name, dataset_key, model_parameters)
+            new_sample.fields_list = fields_list
+            new_sample.applied_filter_rules = copy.deepcopy(dataset.filter_rules)
+            new_sample.tokenization_choice = dataset.tokenization_choice
+            new_sample.tokenization_package_versions = dataset.tokenization_package_versions
+            new_sample_panel = TopicSamplePanel(parent_notebook, new_sample, dataset, self.GetParent().GetSize())  
+            main_frame.samples[new_sample.key] = new_sample
+            new_sample.GenerateStart(new_sample_panel, main_frame.current_workspace.name, self.start_dt)
+            main_frame.StepProgressDialog(GUIText.GENERATING_BERTOPIC_MSG3)
+            parent_notebook.InsertPage(len(parent_notebook.sample_panels), new_sample_panel, new_sample.name, select=True)
+            parent_notebook.sample_panels[new_sample.key] = new_sample_panel
+            main_frame.CloseProgressDialog(message=GUIText.GENERATED_BERTOPIC_COMPLETED_PART1, thaw=False)
+
+
         self.Thaw()
         self.start_dt = None
         logger.info("Finished")
@@ -612,13 +700,13 @@ class SampleComputationalFieldsDialog(wx.Dialog):
                                             freeze=True)
             main_frame.PulseProgressDialog(GUIText.RESTORE_BEGINNING_MSG)
 
+            db_conn = Database.DatabaseConnection(main_frame.current_workspace.name)
+
             main_frame.StepProgressDialog(GUIText.RESTORE_REPLACINGFIELDS_MSG)
             #1) remove from the dataset any currently included fields
-            db_conn = Database.DatabaseConnection(main_frame.current_workspace.name)
             for field_key in list(self.dataset.computational_fields.keys()):
                 if field_key not in self.fields:
                     db_conn.DeleteField(self.dataset.key, field_key)
-            del db_conn
             self.dataset.computational_fields.clear()
             #2) add to the dataset any fields from sample's field_list that are not included fields dataset
             for field_key in self.fields:
@@ -879,6 +967,7 @@ class TopicSamplePanel(AbstractSamplePanel):
         self.Freeze()
         main_frame = wx.GetApp().GetTopWindow()
         main_frame.CreateProgressDialog(GUIText.GENERATED_DEFAULT_LABEL,
+                                        warning=GUIText.GENERATE_WARNING+"\n"+GUIText.SIZE_WARNING_MSG,
                                         freeze=False)
         try:
             main_frame.PulseProgressDialog(GUIText.GENERATED_DEFAULT_LABEL+": "+str(self.sample.name))
@@ -888,11 +977,9 @@ class TopicSamplePanel(AbstractSamplePanel):
             self.sample.GenerateFinish(event.data, dataset, main_frame.current_workspace.name)
             self.DisplayModel()
             main_frame.DocumentsUpdated(self)
-            main_frame.AutoSaveStart()
         finally:
             main_frame.multiprocessing_inprogress_flag = False
             main_frame.CloseProgressDialog(thaw=False)
-            main_frame.statusbar.SetStatusText("")
             self.Thaw()
         logger.info("Finished")
     
@@ -1249,8 +1336,7 @@ class TopicSamplePanel(AbstractSamplePanel):
         main_frame = wx.GetApp().GetTopWindow()
         if self.sample.generated_flag == False:
             main_frame.multiprocessing_inprogress_flag = True
-            start_dt = datetime.now()
-            self.sample.GenerateStart(self, main_frame.current_workspace.name, start_dt, main_frame.pool_num)
+            self.sample.GenerateStart(self)
         else:
             self.DisplayModel()
             self.parts_panel.parts_ctrl.Expander(None)
@@ -1447,8 +1533,8 @@ class TopicListPanel(wx.Panel):
         self.merge_topics_btn = wx.Button(self, label=GUIText.MERGE_TOPIC_LABEL)
         self.merge_topics_btn.SetToolTip(GUIText.MERGE_TOPIC_SHORTHELP)
         actions_sizer.Add(self.merge_topics_btn)
-        self.split_topics_btn = wx.Button(self, label=GUIText.UNMERGE_TOPIC_LABEL)
-        self.split_topics_btn.SetToolTip(GUIText.UNMERGE_TOPIC_SHORTHELP)
+        self.split_topics_btn = wx.Button(self, label=GUIText.SPLIT_TOPIC_LABEL)
+        self.split_topics_btn.SetToolTip(GUIText.SPLIT_TOPIC_SHORTHELP)
         actions_sizer.Add(self.split_topics_btn)
         self.remove_topics_btn = wx.Button(self, label=GUIText.REMOVE_TOPIC_LABEL)
         self.remove_topics_btn.SetToolTip(GUIText.REMOVE_TOPIC_SHORTHELP)
@@ -1468,7 +1554,7 @@ class TopicListPanel(wx.Panel):
         cutoff_sizer.Add(self.cutoff_spin, 0, wx.ALIGN_CENTER)
         controls_sizer.Add(cutoff_sizer, proportion=0, flag=wx.ALL, border=5)
         
-        self.topic_list_model = SamplesDataViews.TopicViewModel(self.sample_panel, sample.parts_dict.values())
+        self.topic_list_model = SamplesDataViews.TopicViewModel(sample.parts_dict.values())
         self.topic_list_ctrl = SamplesDataViews.TopicViewCtrl(self, self.topic_list_model)
         sizer.Add(self.topic_list_ctrl, 1, wx.EXPAND)
 
@@ -1525,7 +1611,7 @@ class LDAModelCreateDialog(wx.Dialog):
         sizer.Add(num_topics_sizer)
 
         num_passes_label = wx.StaticText(self, label=GUIText.NUMBER_OF_PASSES_CHOICE)
-        self.num_passes_ctrl = wx.SpinCtrl(self, min=1, max=100000, initial=100)
+        self.num_passes_ctrl = wx.SpinCtrl(self, min=1, max=1000, initial=100)
         self.num_passes_ctrl.SetToolTip(GUIText.NUMBER_OF_PASSES_TOOLTIP)
         num_passes_sizer = wx.BoxSizer(wx.HORIZONTAL)
         num_passes_sizer.Add(num_passes_label, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
@@ -1618,7 +1704,7 @@ class BitermModelCreateDialog(wx.Dialog):
         sizer.Add(num_topics_sizer)
 
         num_passes_label = wx.StaticText(self, label=GUIText.NUMBER_OF_PASSES_CHOICE)
-        self.num_passes_ctrl = wx.SpinCtrl(self, min=1, max=100000, initial=100)
+        self.num_passes_ctrl = wx.SpinCtrl(self, min=1, max=1000, initial=100)
         self.num_passes_ctrl.SetToolTip(GUIText.NUMBER_OF_PASSES_TOOLTIP)
         num_passes_sizer = wx.BoxSizer(wx.HORIZONTAL)
         num_passes_sizer.Add(num_passes_label, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
@@ -1755,3 +1841,188 @@ class NMFModelCreateDialog(wx.Dialog):
         logger.info("Finished")
         if status_flag:
             self.EndModal(wx.ID_OK)
+
+
+
+
+class Top2VecModelCreateDialog(wx.Dialog):
+    def __init__(self, parent):
+        logger = logging.getLogger(__name__+".Top2VecModelCreateDialog.__init__")
+        logger.info("Starting")
+        wx.Dialog.__init__(self, parent, title=GUIText.CREATE_TOP2VEC)
+
+        self.model_parameters = {}
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        #need to only show tokensets that have fields containing data
+        self.usable_datasets = []
+        main_frame = wx.GetApp().GetTopWindow()
+        for dataset in main_frame.datasets.values():
+            if len(dataset.computational_fields) > 0:
+                self.usable_datasets.append(dataset.key)
+        if len(self.usable_datasets) > 1: 
+            dataset_label = wx.StaticText(self, label=GUIText.DATASET+":")
+            usable_datasets_strings = [str(dataset_key) for dataset_key in self.usable_datasets]
+            self.dataset_ctrl = wx.Choice(self, choices=usable_datasets_strings)
+            dataset_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            dataset_sizer.Add(dataset_label, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+            dataset_sizer.Add(self.dataset_ctrl, 0, wx.ALL, 5)
+            sizer.Add(dataset_sizer)
+
+        num_topics_label = wx.StaticText(self, label=GUIText.NUMBER_OF_TOPICS_CHOICE)
+        self.num_topics_ctrl = wx.SpinCtrl(self, min=1, max=10000, initial=10)
+        self.num_topics_ctrl.SetToolTip(GUIText.NUMBER_OF_TOPICS_TOOLTIP)
+        num_topics_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        num_topics_sizer.Add(num_topics_label, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        num_topics_sizer.Add(self.num_topics_ctrl, 0, wx.ALL, 5)
+        sizer.Add(num_topics_sizer)
+
+        num_passes_label = wx.StaticText(self, label=GUIText.NUMBER_OF_PASSES_CHOICE)
+        self.num_passes_ctrl = wx.SpinCtrl(self, min=1, max=1000, initial=100)
+        self.num_passes_ctrl.SetToolTip(GUIText.NUMBER_OF_PASSES_TOOLTIP)
+        num_passes_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        num_passes_sizer.Add(num_passes_label, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        num_passes_sizer.Add(self.num_passes_ctrl, 0, wx.ALL, 5)
+        sizer.Add(num_passes_sizer)
+
+        controls_sizer = self.CreateButtonSizer(wx.OK|wx.CANCEL)
+        ok_button = wx.FindWindowById(wx.ID_OK, self)
+        ok_button.SetLabel(GUIText.CREATE_TOP2VEC)
+        ok_button.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
+        sizer.Add(controls_sizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+
+        self.SetSizer(sizer)
+        
+        self.Layout()
+        self.Fit()
+        logger.info("Finished")
+
+    def OnOK(self, event):
+        logger = logging.getLogger(__name__+".Top2VecModelCreateDialog.OnOK")
+        logger.info("Starting")
+        main_frame = wx.GetApp().GetTopWindow()
+        #check that name exists and is unique
+        status_flag = True
+
+        main_frame.model_iter += 1
+        model_name = "Model_"+str(main_frame.model_iter)
+
+        if len(self.usable_datasets) > 1:
+            dataset_id = self.dataset_ctrl.GetSelection()
+            if dataset_id is wx.NOT_FOUND:
+                wx.MessageBox(GUIText.DATASET_MISSING_ERROR,
+                            GUIText.ERROR, wx.OK | wx.ICON_ERROR)
+                logger.warning('dataset was not chosen')
+                status_flag = False
+        elif len(self.usable_datasets) == 1:
+            dataset_id = 0
+        else:
+            wx.MessageBox(GUIText.DATASET_NOTAVAILABLE_ERROR,
+                          GUIText.ERROR, wx.OK | wx.ICON_ERROR)
+            logger.warning('no dataset available')
+            status_flag = False
+
+        if status_flag:
+            self.model_parameters['name'] = model_name
+            self.model_parameters['dataset_key'] = self.usable_datasets[dataset_id]
+            self.model_parameters['num_topics'] = self.num_topics_ctrl.GetValue()
+            self.model_parameters['num_passes'] = self.num_passes_ctrl.GetValue()
+            self.model_parameters['alpha'] = None
+            self.model_parameters['eta'] = None
+        logger.info("Finished")
+        if status_flag:
+            self.EndModal(wx.ID_OK)
+
+
+
+class BertopicModelCreateDialog(wx.Dialog):
+    def __init__(self, parent):
+        logger = logging.getLogger(__name__+".BertopicModelCreateDialog.__init__")
+        logger.info("Starting")
+        wx.Dialog.__init__(self, parent, title=GUIText.CREATE_BERTOPIC)
+
+        self.model_parameters = {}
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        #need to only show tokensets that have fields containing data
+        self.usable_datasets = []
+        main_frame = wx.GetApp().GetTopWindow()
+        for dataset in main_frame.datasets.values():
+            if len(dataset.computational_fields) > 0:
+                self.usable_datasets.append(dataset.key)
+        if len(self.usable_datasets) > 1: 
+            dataset_label = wx.StaticText(self, label=GUIText.DATASET+":")
+            usable_datasets_strings = [str(dataset_key) for dataset_key in self.usable_datasets]
+            self.dataset_ctrl = wx.Choice(self, choices=usable_datasets_strings)
+            dataset_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            dataset_sizer.Add(dataset_label, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+            dataset_sizer.Add(self.dataset_ctrl, 0, wx.ALL, 5)
+            sizer.Add(dataset_sizer)
+
+        num_topics_label = wx.StaticText(self, label=GUIText.NUMBER_OF_TOPICS_CHOICE)
+        self.num_topics_ctrl = wx.SpinCtrl(self, min=1, max=10000, initial=10)
+        self.num_topics_ctrl.SetToolTip(GUIText.NUMBER_OF_TOPICS_TOOLTIP)
+        num_topics_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        num_topics_sizer.Add(num_topics_label, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        num_topics_sizer.Add(self.num_topics_ctrl, 0, wx.ALL, 5)
+        sizer.Add(num_topics_sizer)
+
+        num_passes_label = wx.StaticText(self, label=GUIText.NUMBER_OF_PASSES_CHOICE)
+        self.num_passes_ctrl = wx.SpinCtrl(self, min=1, max=1000, initial=100)
+        self.num_passes_ctrl.SetToolTip(GUIText.NUMBER_OF_PASSES_TOOLTIP)
+        num_passes_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        num_passes_sizer.Add(num_passes_label, 0, wx.ALL|wx.ALIGN_CENTRE_VERTICAL, 5)
+        num_passes_sizer.Add(self.num_passes_ctrl, 0, wx.ALL, 5)
+        sizer.Add(num_passes_sizer)
+
+        controls_sizer = self.CreateButtonSizer(wx.OK|wx.CANCEL)
+        ok_button = wx.FindWindowById(wx.ID_OK, self)
+        ok_button.SetLabel(GUIText.CREATE_BERTOPIC)
+        ok_button.Bind(wx.EVT_BUTTON, self.OnOK, id=wx.ID_OK)
+        sizer.Add(controls_sizer, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+
+        self.SetSizer(sizer)
+        
+        self.Layout()
+        self.Fit()
+        logger.info("Finished")
+
+    def OnOK(self, event):
+        logger = logging.getLogger(__name__+".BertopicModelCreateDialog.OnOK")
+        logger.info("Starting")
+        main_frame = wx.GetApp().GetTopWindow()
+        #check that name exists and is unique
+        status_flag = True
+
+        main_frame.model_iter += 1
+        model_name = "Model_"+str(main_frame.model_iter)
+
+        if len(self.usable_datasets) > 1:
+            dataset_id = self.dataset_ctrl.GetSelection()
+            if dataset_id is wx.NOT_FOUND:
+                wx.MessageBox(GUIText.DATASET_MISSING_ERROR,
+                            GUIText.ERROR, wx.OK | wx.ICON_ERROR)
+                logger.warning('dataset was not chosen')
+                status_flag = False
+        elif len(self.usable_datasets) == 1:
+            dataset_id = 0
+        else:
+            wx.MessageBox(GUIText.DATASET_NOTAVAILABLE_ERROR,
+                          GUIText.ERROR, wx.OK | wx.ICON_ERROR)
+            logger.warning('no dataset available')
+            status_flag = False
+
+        if status_flag:
+            self.model_parameters['name'] = model_name
+            self.model_parameters['dataset_key'] = self.usable_datasets[dataset_id]
+            self.model_parameters['num_topics'] = self.num_topics_ctrl.GetValue()
+            self.model_parameters['num_passes'] = self.num_passes_ctrl.GetValue()
+            self.model_parameters['alpha'] = None
+            self.model_parameters['eta'] = None
+        logger.info("Finished")
+        if status_flag:
+            self.EndModal(wx.ID_OK)
+
+

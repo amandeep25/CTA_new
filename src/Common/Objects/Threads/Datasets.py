@@ -23,7 +23,6 @@ class TokenizerThread(Thread):
     def run(self):
         logger = logging.getLogger(__name__+"TokenizerThread["+str(self.dataset.key)+"].run")
         logger.info("Starting")
-        self.main_frame.multiprocessing_inprogress_flag = True
         DatasetsUtilities.TokenizeDataset(self.dataset, self._notify_window, self.main_frame, rerun=self.rerun, tfidf_update=self.tfidf_update)
         result = {}
         wx.PostEvent(self._notify_window, CustomEvents.TokenizerResultEvent(result))
@@ -59,8 +58,6 @@ class ChangeTokenizationChoiceThread(Thread):
         self.dataset.total_tokens_remaining = included_counts['tokens']
         self.dataset.total_uniquetokens_remaining = included_counts['unique_tokens']
         
-        del db_conn
-
         #return event from thread
         result = {}
         wx.PostEvent(self._notify_window, CustomEvents.ChangeTokenizationResultEvent(result))

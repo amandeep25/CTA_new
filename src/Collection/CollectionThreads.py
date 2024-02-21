@@ -155,7 +155,6 @@ class RetrieveRedditDatasetThread(Thread):
                         status_flag = False
                         error_msg = GUIText.RETRIEVAL_FAILED_ERROR
                 if status_flag:
-                    step_label = GUIText.RETRIEVING_REDDIT_IMPORTING_COMMENT_STEP
                     raw_comment_data = self.ImportDataFiles(step_label, subreddit, self.start_date, self.end_date, "RC_")
                     comment_data = {}
                     wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'step':GUIText.RETRIEVING_REDDIT_PREPARING_COMMENT_STEP}))
@@ -307,10 +306,10 @@ class RetrieveRedditDatasetThread(Thread):
                 loop_estimate = timedelta()
                 remaining = len(files)
                 #retrieve only needed data from first file
-                with open(files[0], 'r', encoding="utf-8") as infile:
+                with open(files[0], 'r') as infile:
                     wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'msg':GUIText.RETRIEVING_IMPORTING_FILE_MSG+str(files[0])}))
                     loop_start_time = datetime.now()
-                    temp_data = json.load(infile, strict = False)
+                    temp_data = json.load(infile)
                     temp_data.pop(0)
                     for entry in temp_data:
                         if entry['created_utc'] >= calendar.timegm((datetime.strptime(start_date,
@@ -325,10 +324,10 @@ class RetrieveRedditDatasetThread(Thread):
                 if len(files) > 2:
                     #retrieve all data from middle files
                     for filename in files[1:(len(files)-2)]:
-                        with open(filename, 'r', encoding="utf-8") as infile:
+                        with open(filename, 'r') as infile:
                             wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'msg':GUIText.RETRIEVING_IMPORTING_FILE_MSG+str(filename)}))
                             loop_start_time = datetime.now()
-                            new_data = json.load(infile, strict = False)
+                            new_data = json.load(infile)
                             new_data.pop(0)
                             data = data + new_data
                             remaining -= 1
@@ -339,10 +338,10 @@ class RetrieveRedditDatasetThread(Thread):
                             wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'estimated_time':elapsed_time + (loop_estimate * remaining)}))
 
                 #retrieve only needed data from last file
-                with open(files[(len(files)-1)], 'r', encoding="utf-8") as infile:
+                with open(files[(len(files)-1)], 'r') as infile:
                     wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'msg':GUIText.RETRIEVING_IMPORTING_FILE_MSG+str(files[(len(files)-1)])}))
                     loop_start_time = datetime.now()
-                    temp_data = json.load(infile, strict = False)
+                    temp_data = json.load(infile)
                     temp_data.pop(0)
                     for entry in temp_data:
                         if entry['created_utc'] < calendar.timegm((datetime.strptime(end_date,
@@ -356,8 +355,8 @@ class RetrieveRedditDatasetThread(Thread):
                     wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'estimated_time':elapsed_time + (loop_estimate * remaining)}))
             else:
                 wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'msg':GUIText.RETRIEVING_IMPORTING_FILE_MSG+str(files[0])}))
-                with open(files[0], 'r', encoding="utf-8") as infile:
-                    temp_data = json.load(infile, strict = False)
+                with open(files[0], 'r') as infile:
+                    temp_data = json.load(infile)
                     temp_data.pop(0)
                     for entry in temp_data:
                         if entry['created_utc'] >= calendar.timegm((datetime.strptime(start_date,
@@ -542,9 +541,9 @@ class RetrieveTwitterDatasetThread(Thread):
         if len(files) != 0:
             if len(files) > 1:
                 #retrieve only needed data from first file
-                with open(files[0], 'r', encoding="utf-8") as infile:
+                with open(files[0], 'r') as infile:
                     wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'msg':GUIText.RETRIEVING_IMPORTING_FILE_MSG+str(files[0])}))
-                    temp_data = json.load(infile, strict = False)
+                    temp_data = json.load(infile)
                     temp_data.pop(0)
                     for entry in temp_data:
                         if entry['created_utc'] >= calendar.timegm((datetime.strptime(start_date, "%Y-%m-%d")).timetuple()):
@@ -553,23 +552,23 @@ class RetrieveTwitterDatasetThread(Thread):
                     #retrieve all data from middle files
                     for filename in files[1:(len(files)-2)]:
                         wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'msg':GUIText.RETRIEVING_IMPORTING_FILE_MSG+str(filename)}))
-                        with open(filename, 'r', encoding="utf-8") as infile:
-                            new_data = json.load(infile, strict = False)
+                        with open(filename, 'r') as infile:
+                            new_data = json.load(infile)
                             new_data.pop(0)
                             data = data + new_data
 
                 #retrieve only needed data from last file
-                with open(files[(len(files)-1)], 'r', encoding="utf-8") as infile:
+                with open(files[(len(files)-1)], 'r') as infile:
                     wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'msg':GUIText.RETRIEVING_IMPORTING_FILE_MSG+str(files[(len(files)-1)])}))
-                    temp_data = json.load(infile, strict = False)
+                    temp_data = json.load(infile)
                     temp_data.pop(0)
                     for entry in temp_data:
                         if entry['created_utc'] < calendar.timegm((datetime.strptime(end_date, "%Y-%m-%d") + relativedelta(days=1)).timetuple()):
                             data.append(entry)
             else:
                 wx.PostEvent(self.main_frame, CustomEvents.ProgressEvent({'msg':GUIText.RETRIEVING_IMPORTING_FILE_MSG+str(files[0])}))
-                with open(files[0], 'r', encoding="utf-8") as infile:
-                    temp_data = json.load(infile, encoding="utf-8", strict = False)
+                with open(files[0], 'r') as infile:
+                    temp_data = json.load(infile)
                     temp_data.pop(0)
                     for entry in temp_data:
                         if entry['created_utc'] >= calendar.timegm((datetime.strptime(start_date, "%Y-%m-%d")).timetuple()):
@@ -777,7 +776,7 @@ class RetrieveCSVDatasetThread(Thread):
         logger = logging.getLogger(__name__+".RetrieveCSVDatasetThread.ImportDataFiles["+filename+"]")
         logger.info("Starting")
 
-        with open(filename, 'rb', encoding="utf-8") as infile:
+        with open(filename, 'rb') as infile:
             encoding_result = chardet.detect(infile.read(100000))
 
         filedata_df = pd.read_csv(filename, encoding='utf-8', keep_default_na=False, dtype='unicode')

@@ -99,7 +99,7 @@ class Common:
     THEMES = "Themes"
     NUMBER_OF_CODES = "# of Codes"
 
-    SIZE_WARNING_MSG = "CAREFUL: may take some time for large datasets"
+    SIZE_WARNING_MSG = "WARNING: may take some time for large datasets"
     TOTAL_TIME_LABEL = "Total Time:"
     CURRENT_STEP_LABEL = "Current Step: "
     CURRENT_STEP_TIME_LABEL = "Current Step Time:"
@@ -229,7 +229,7 @@ class Main(Common):
                            "\n1a) Any Sets' Descriptions will become Theme Notes"\
                            "\n2a) Any Sets' MemberCodes will become Theme to Code References"
     IMPORT_CODEBOOK_CONFIRMATION_REQUEST = "Please confirm you wish to import an external codebook file into this project."\
-                                           "\nCAREFUL: Existing codes may be updated if they had previously been exported or imported and are present in the external codebook"
+                                           "\nWARNING: Existing codes may be updated if they had previously been exported or imported and are present in the external codebook"
     IMPORT_CODEBOOK_SUCCESS = "Codes and Themes were successfully imported from an REFI-QDA Codebook."
     IMPORT_CODEBOOK_ERROR_IO = "Cannot load specified codebook file.\nPlease check that you have read access to the file and directory."
     IMPORT_CODEBOOK_ERROR_XML = "XML Error occured when importing codebook file."
@@ -311,9 +311,6 @@ class Main(Common):
     NOTES_LABEL = "Notes"
     TWITTER_LABEL = "Twitter"
 
-    MULTIPROCESSING_LABEL = "Multiprocessing Options"
-    MAXIMUM_POOL_SIZE_LABEL = "Maximum Pool Size"
-
 class Datasets(Common):
     #common
     DESCRIPTION = "Description"
@@ -336,10 +333,10 @@ class Datasets(Common):
     DATA_CONSTRAINTS = "Data Constraints"
     START_DATE = "Start Date"
     #START_DATETIME = "Start Date & Time"
-    START_DATE_TOOLTIP = "Needs to be less than or equal to End Date"
+    START_DATE_TOOLTIP = "Needs to be less than of equal to End Date"
     END_DATE = "End Date"
     #END_DATETIME = "End Date & Time"
-    END_DATE_TOOLTIP = "Needs to be greater than or equal to Start Date"
+    END_DATE_TOOLTIP = "Needs to be greater than of equal to Start Date"
     DATE_ERROR = "Start Date needs to be before End Date"
     SPECIAL_DATA_FIELDS = "Special Data Fields"
     ETHICAL_CONSIDERATIONS = "Ethical Considerations"
@@ -367,7 +364,6 @@ class Datasets(Common):
     REDDIT_SUBREDDIT_MISSING_ERROR = "Please enter a Subreddit."
     REDDIT_SEARCH_BY = "Search by"
     REDDIT_CONTAINS_TEXT = "Contains Text"
-    REDDIT_CONTAINS_TEXT_TOOLTIP = "Currently only supports the string literial entered into the text box"
     REDDIT_DISCUSSIONS = "Discussions"
     REDDIT_DISCUSSIONS_TOOLTIP = "Will group any Reddit submissions and/or comments retrieved into discussions"
     REDDIT_SUBMISSIONS = "Submissions"
@@ -383,24 +379,24 @@ class Datasets(Common):
     REDDIT_UPDATE_PUSHSHIFT_TOOLTIP = "For any part of the period between the start and end dates that the local subreddit archive does not have data,"\
                                        "update the archive using pushshift.io API"\
                                        "\nThen use the archive to create the dataset."\
-                                       "\nCAREFUL: This operation may take between several minutes to hours depending on size of existing local subreddit archive"
+                                       "\nWARNING: This operation may take between several minutes to hours depending on sizze of existing local subreddit archive"
     REDDIT_FULL_PUSHSHIFT = "Full retrieval from Pushshift.io"
     REDDIT_FULL_PUSHSHIFT_TOOLTIP = "Remove any existing local subreddit archive."\
                                     "Then retrieve a new archive from pushshift.io API for the period between the start and end dates."\
                                     "Then use the archive to create the dataset"\
-                                    "\nCAREFUL: This operation is a slow and may take several hours"
+                                    "\nWARNING: This operation is a slow and may take several hours"
     REDDIT_UPDATE_REDDITAPI = "Local Subreddit Archive and updated using Pushshift.io and Reddit API"
     REDDIT_UPDATE_REDDITAPI_TOOLTIP = "For any part of the period between the start and end dates that the local subreddit archive does not have data,"\
                                       "update the archive using pushshift.io API"\
                                       "Then update the local subreddit archive for the period between the start and end dates using the Reddit API."\
                                       "Then use the updated archive to create the dataset"\
-                                      "\nCAREFUL: This operation is slow and may take several hours"
+                                      "\nWARNING: This operation is slow and may take several hours"
     REDDIT_FULL_REDDITAPI = "Full retrieved from Pushshift.io and updated using Reddit API"
     REDDIT_FULL_REDDITAPI_TOOLTIP = "Remove any existing local subreddit archive."\
                                     "Then retrieve a new archive from pushshift.io API for the period between the start and end dates."\
                                     "Then update the archive for the period between the start and end dates using the Reddit API."\
                                     "Then use the updated archive to create the dataset"\
-                                    "\nCAREFUL: This operation is slow and may take several hours"
+                                    "\nWARNING: This operation is slow and may take several hours"
     
     #Twitter Specific Dialog
     TWITTER_RETRIEVE_LABEL = "Retrieve New Twitter Dataset"
@@ -481,9 +477,9 @@ class Datasets(Common):
     #Tokenizing 
     TOKENIZING_BUSY_STEP = "Tokenizing Data"
     TOKENIZING_BUSY_STARTING_FIELD_MSG = "- Starting to tokenize field: "
-    TOKENIZING_BUSY_COMPLETED_FIELD_MSG1 = "-- completed tokenizing "
+    TOKENIZING_BUSY_COMPLETED_FIELD_MSG1 = "-- completed tokenizing threads "
     TOKENIZING_BUSY_COMPLETED_FIELD_MSG2 = " of "
-    TOKENIZING_BUSY_COMPLETED_FIELD_MSG3 = " enteries for field: "
+    TOKENIZING_BUSY_COMPLETED_FIELD_MSG3 = " for field: "
     TOKENIZING_BUSY_STEP_TFIDF_STEP = "Calculating TFIDF values"
     TOKENIZING_BUSY_STARTING_TFIDF_MSG = "- Starting to calculate TFIDF values"
     TOKENIZING_BUSY_COMPLETED_TFIDF_MSG = "- Completed to calculating TFIDF values"
@@ -519,6 +515,12 @@ class Samples(Main):
     NMF_LABEL = "Non-Negative Matrix Factorization"
     NMF_DESC = "This topic model is suited to rough identifying topics when performing initial explorations"
     NMF_URL = "https://dl.acm.org/doi/book/10.5555/aai28114631"
+    TOP2VEC_LABEL = "Top2Vec"
+    TOP2VEC_DESC =" This model is ideal for preliminary topic identification during exploratory analysis"
+    TOP2VEC_URL="https://arxiv.org/abs/2008.09470"
+    BERTOPIC_LABEL = "Bertopic"
+    BERTOPIC_DESC =" This model is a transformers-based hierarchical topic modeling for efficient exploratory analysis."
+    BERTOPIC_URL="https://arxiv.org/abs/2203.05794"
 
     #model list columns and tools
     SAMPLE_NAME = "Name"
@@ -533,17 +535,21 @@ class Samples(Main):
     CREATE_BITERM_TOOLTIP = "Create a new Biterm Topic Model of a dataset"
     CREATE_NMF = "Create " + NMF_LABEL
     CREATE_NMF_TOOLTIP = "Create a new Non-Negative Matrix Factorization Topic Model of a dataset"
+    CREATE_TOP2VEC = "Create " + TOP2VEC_LABEL
+    CREATE_TOP2VEC_TOOLTIP = "Create a Top2Vec Topic Model of a dataset"
+    CREATE_BERTOPIC = "Create " + BERTOPIC_LABEL
+    CREATE_BERTOPIC_TOOLTIP = "Create a new Bertopic Topic Model of a dataset"
     
     DELETE_SAMPLE_LABEL = "Delete Sample"
-    DELETE_SAMPLE_WARNING = "\nCAREFUL: this action cannot be undone."
+    DELETE_SAMPLE_WARNING = "\nWARNING this action cannot be undone."
 
     MERGE_TOPIC_LABEL = "Merge Topics"
     MERGE_TOPIC_SHORTHELP = "Create a new Merged Topic from selected Topics"
-    UNMERGE_TOPIC_LABEL = "Unmerge Topics"
-    UNMERGE_TOPIC_SHORTHELP = "Remove selected topics from their Merged Topic"
+    SPLIT_TOPIC_LABEL = "Split Topics"
+    SPLIT_TOPIC_SHORTHELP = "Remove selected topics from their Merged Topic"
     REMOVE_TOPIC_LABEL = "Remove Topics"
     REMOVE_TOPIC_SHORTHELP = "Remove selected topics from the model"
-    REMOVE_TOPIC_WARNING = "\nCAREFUL: this action cannot be undone."
+    REMOVE_TOPIC_WARNING = "\nWARNING this action cannot be undone."
     PROBABILITY_CUTOFF_LABEL = "Probability Cutoff "
     PROBABILITY_CUTOFF_TOOLTIP = "Include documents in a topic when the model predicts the probability of the topic being present in the document is greater or equal to the cutoff"
 
@@ -597,7 +603,7 @@ class Samples(Main):
     AFTERFILTERING_LABEL3 = " documents available"
     
 
-    GENERATE_WARNING = "\nCAREFUL: Do not shut down program or else model will not be created."
+    GENERATE_WARNING = "\nWARNING: Do not shut down program or else model will not be created."
     GENERATE_NOTSAVED_WARNING = "Workspace has not yet been saved."\
                                 "\nTo generate this type of sample you need to save the workspace"
     GENERATING_DEFAULT_LABEL = "Generating Sample"
@@ -614,6 +620,12 @@ class Samples(Main):
     GENERATING_NMF_SUBLABEL = "Creating NMF Topic Sample: "
     GENERATING_NMF_MSG2 = "Initalizing NMF Topic Model"
     GENERATING_NMF_MSG3 = "Generating NMF Topic Model"
+    GENERATING_TOP2VEC_SUBLABEL = "Creating Top2Vec Topic Sample: "
+    GENERATING_TOP2VEC_MSG2 = "Initalizing Top2Vec Topic Model"
+    GENERATING_TOP2VEC_MSG3 = "Generating Top2Vec Topic Model"
+    GENERATING_BERTOPIC_SUBLABEL = "Creating Bertopic Topic Sample: "
+    GENERATING_BERTOPIC_MSG2 = "Initalizing Bertopic Topic Model"
+    GENERATING_BERTOPIC_MSG3 = "Generating Bertopic Topic Model"
 
     GENERATED_DEFAULT_LABEL = "Generated Sample"
     GENERATED_LDA_SUBLABEL = "Loading results for LDA Topic Sample: "
@@ -624,6 +636,18 @@ class Samples(Main):
                                     +"\nA new dialog will open when completed."
     GENERATED_NMF_COMPLETED_PART1 = "NMF Topic Model Generation will continue running in background."\
                                     +"\nA new dialog will open when completed."
+    GENERATED_TOP2VEC_SUBLABEL = "Loading results for Top2Vec Topic Sample: "
+    GENERATED_TOP2VEC_COMPLETED_PART1 = "Top2Vec Topic Model Generation will continue running in background."\
+                                    +"\nA new dialog will open when completed."
+    GENERATED_BERTOPIC_SUBLABEL = "Loading results for Bertopic Topic Sample: "
+    GENERATED_BERTOPIC_COMPLETED_PART1 = "Bertopic Topic Model Generation will continue running in background."\
+                                    +"\nA new dialog will open when completed."
+
+
+
+
+
+    
 
     #review list table column labels
     REVIEW_NAME = "Review Name"
@@ -643,9 +667,7 @@ class Collection(Main, Datasets):
     ETHICS_REDDIT = "Reddit's policies and terms of use for collecting data."
     ETHICS_REDDIT_URL = "https://www.redditinc.com/policies/"
     ETHICS_REDDITAPI_URL = "https://www.reddit.com/wiki/api-terms"
-    ETHICS_PUSHSHIFT = "that this toolkit option uses the Pushshift.io api to collect Reddit Data."
-    ETHICS_PUSHSHIFT2 = "that the Pushshift.io's Reddit API access was removed by Reddit for not being in compliance with revised terms."
-    ETHICS_PUSHSHIFT2_URL = "https://www.reddit.com/r/modnews/comments/134tjpe/reddit_data_api_update_changes_to_pushshift_access/"
+    ETHICS_PUSHSHIFT = "that this toolkit uses the Pushshift.io api to collect Reddit Data."
 
     INCLUDE_RETWEETS = "Include retweets"
     RETRIEVAL_NOTICE_TWITTER = "* Currently, only (English) tweets up to 7 days back from the current date may be retrieved. *"
@@ -675,7 +697,7 @@ class Collection(Main, Datasets):
     DATASETS_UNGROUP_TOOLTIP = "Selected datasets will be ungrouped"
     DATASETS_DELETE_DATASET = "Delete Dataset"
     DATASETS_DELETE_TOOLTIP = "Selected datasets will be removed"
-    DATASETS_DELETE_CONFIRMATION_WARNING = "\nCAREFUL: this action can only be undone by adding new datasets."
+    DATASETS_DELETE_CONFIRMATION_WARNING = "\nWARNING this action can only be undone by adding new datasets."
 
     DATASETSDATA_LABEL = "Dataset Data"
     VIEW_DETAILS = "View Details"
@@ -819,7 +841,7 @@ class Filtering(Main, Datasets):
 
 
     FILTERS_IMPORT_CONFIRMATION_REQUEST = "Are you sure you want to proceed with importing rule?"\
-                                          "\nCAREFUL: Any current rules will be lost."
+                                          "\nWARNING: Any current rules will be lost."
     FILTERS_IMPORT = "Import Rules"
     FILTERS_IMPORT_TOOLTIP = "Import Custom Rules from file"
     FILTERS_EXPORT = "Export Rules"
@@ -908,3 +930,4 @@ class Reporting(Main):
     THEME_FILTERS = "Filter Themes"
     CODE_FILTERS = "Filter Codes"
     QUOTE_FILTERS = "Filter Quotes"
+

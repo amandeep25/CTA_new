@@ -10,6 +10,7 @@ import wx
 
 #ML libraries
 import gensim
+#If not getting updated, use this code https://github.com/maximtrp/bitermplus
 import bitermplus as btm
 from sklearn.decomposition import NMF as nmf
 from sklearn.feature_extraction.text import TfidfVectorizer

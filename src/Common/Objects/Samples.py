@@ -10,6 +10,16 @@ import pandas as pd
 import numpy as np
 import gensim
 import bitermplus as btm
+from top2vec import Top2Vec
+from bertopic import BERTopic
+from sentence_transformers import SentenceTransformer
+from umap import UMAP
+from hdbscan import HDBSCAN
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
+from sklearn.feature_extraction.text import CountVectorizer
+from bertopic.vectorizers import ClassTfidfTransformer
+from gensim.models.coherencemodel import CoherenceModel
 
 from Common.Objects.Generic import GenericObject
 import Common.Objects.Threads.Samples as SamplesThreads

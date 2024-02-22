@@ -81,7 +81,8 @@ Open src folder in an IDE (tested in VS Code on Windows and OSX)
 - pip install scikit-learn
 - pip install top2vec
 - pip install bertopic
-
+- pip install squarify
+YES
 ### Additional Steps
 - python -m spacy download fr_core_news_sm
 - python -m spacy download en_core_web_sm

@@ -342,7 +342,8 @@ class SampleCreatePanel(wx.Panel):
             main_frame.StepProgressDialog(GUIText.GENERATING_TOP2VEC_MSG3)
             parent_notebook.InsertPage(len(parent_notebook.sample_panels), new_sample_panel, new_sample.name, select=True)
             parent_notebook.sample_panels[new_sample.key] = new_sample_panel
-            main_frame.CloseProgressDialog(message=GUIText.GENERATED_TOP2VEC_COMPLETED_PART1, thaw=False)
+            main_frame.CloseProgressDialog(message=GUIText.GENERATED_TOP2VEC_COMPLETED_PART1,
+                                           thaw=False)
 
 
 
@@ -360,7 +361,8 @@ class SampleCreatePanel(wx.Panel):
             main_frame.StepProgressDialog(GUIText.GENERATING_BERTOPIC_MSG3)
             parent_notebook.InsertPage(len(parent_notebook.sample_panels), new_sample_panel, new_sample.name, select=True)
             parent_notebook.sample_panels[new_sample.key] = new_sample_panel
-            main_frame.CloseProgressDialog(message=GUIText.GENERATED_BERTOPIC_COMPLETED_PART1, thaw=False)
+            main_frame.CloseProgressDialog(message=GUIText.GENERATED_BERTOPIC_COMPLETED_PART1,
+                                           thaw=False)
 
 
         self.Thaw()

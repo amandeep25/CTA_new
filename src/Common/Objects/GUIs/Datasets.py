@@ -35,14 +35,17 @@ class DataNotebook(FNB.FlatNotebook):
         logger.info("Starting")
         main_frame = wx.GetApp().GetTopWindow()
         dataset_data_tab_keys = list(self.dataset_data_tabs.keys())
-        self.Freeze()
+        #self.Freeze()
+        print("works till here")
         for key in dataset_data_tab_keys:
             index = self.GetPageIndex(self.dataset_data_tabs[key])
             if index is not wx.NOT_FOUND:
                 self.DeletePage(index)
             del self.dataset_data_tabs[key]
         for key in main_frame.datasets:
+            print("works till here 2")
             main_frame.StepProgressDialog(GUIText.REFRESHING_DATASETS_BUSY_STEP+str(main_frame.datasets[key].name))
+            print("works till here 3")
             if key in self.dataset_data_tabs:
                 self.dataset_data_tabs[key].Update()
             else:

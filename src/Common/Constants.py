@@ -27,6 +27,8 @@ XSD_PATH = os.path.join(ROOT_PATH, 'External/XSD')
 
 SAVE_DATA_PATH = os.path.realpath(os.path.expanduser('~/Documents/ComputationalThematicAnalysisToolkit.nosync'))
 old_SAVE_DATA_PATH = os.path.realpath(os.path.expanduser('~/Documents/ComputationalThematicAnalysisToolkit'))
+# SAVE_DATA_PATH = os.path.realpath(os.path.expanduser('~/Documents/GitHub'))
+# old_SAVE_DATA_PATH = os.path.realpath(os.path.expanduser('~/Documents/GitHub'))
 if not os.path.exists(SAVE_DATA_PATH):
     if os.path.exists(old_SAVE_DATA_PATH):
         os.rename(old_SAVE_DATA_PATH, SAVE_DATA_PATH)

@@ -59,7 +59,7 @@ class MainFrame(wx.Frame):
         self.codes = {}
         self.themes = {}
         self.save_path = ''
-        self.name = 'New_Workspace'
+        self.name = 'New_Workspace_latest'
         self.current_workspace = tempfile.TemporaryDirectory(dir=Constants.CURRENT_WORKSPACE_PATH)
         Database.DatabaseConnection(self.current_workspace.name).Create()
         self.load_workspace = None

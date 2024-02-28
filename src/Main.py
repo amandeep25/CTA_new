@@ -974,6 +974,7 @@ class MainFrame(wx.Frame):
         if thaw:
             self.Enable()
             self.Thaw()
+            
     def DatasetsUpdated(self, autosave=True):
         logger = logging.getLogger(__name__+".MainFrame.DatasetsUpdated")
         logger.info("Starting")

@@ -1,3 +1,3 @@
 #!/bin/bash
-cd  Code
-python3.8 ./Main.py
+cd  src
+python3 ./Main.py

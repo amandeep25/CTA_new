@@ -554,7 +554,7 @@ class DatasetsDataGrid(wx.grid.Grid):
                 if contents_size > max_size or label_size > max_label_size:
                     contents_size = max_label_size
                     label_size = max_label_size
-                self.SetColSize(col_count, max(contents_size, label_size))
+                self.SetColSize(col_count, max(int(contents_size), int(label_size)))  # Convert to integers
                 max_size = max_size - max(contents_size, label_size)
                 col_count = col_count + 1
             

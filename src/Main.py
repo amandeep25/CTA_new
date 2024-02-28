@@ -953,6 +953,17 @@ class MainFrame(wx.Frame):
         if self.progress_dialog is not None:
             self.progress_dialog.AddMsg(message)
 
+    # def CloseProgressDialog(self, message=GUIText.FINISHED, thaw=False, close=False):
+    #     if self.progress_dialog is not None:
+    #         self.progress_dialog_references -= 1
+    #         if self.progress_dialog_references == 0:
+    #             if thaw:  # Thaw before closing if requested
+    #                 self.Thaw()
+    #             self.progress_dialog.End(message)
+    #             if close:
+    #                 self.progress_dialog.Close()
+
+
     def CloseProgressDialog(self, message=GUIText.FINISHED, thaw=False, close=False):
         if self.progress_dialog is not None:
             self.progress_dialog_references -= 1
@@ -963,7 +974,6 @@ class MainFrame(wx.Frame):
         if thaw:
             self.Enable()
             self.Thaw()
-
     def DatasetsUpdated(self, autosave=True):
         logger = logging.getLogger(__name__+".MainFrame.DatasetsUpdated")
         logger.info("Starting")

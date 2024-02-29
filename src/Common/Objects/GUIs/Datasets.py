@@ -35,7 +35,7 @@ class DataNotebook(FNB.FlatNotebook):
         logger.info("Starting")
         main_frame = wx.GetApp().GetTopWindow()
         dataset_data_tab_keys = list(self.dataset_data_tabs.keys())
-        #self.Freeze()
+        self.Freeze()
         print("works till here")
         for key in dataset_data_tab_keys:
             index = self.GetPageIndex(self.dataset_data_tabs[key])
@@ -53,7 +53,9 @@ class DataNotebook(FNB.FlatNotebook):
                     if len(main_frame.datasets[key].data) > 0:
                         self.dataset_data_tabs[key] = DatasetDataPanel(self, main_frame.datasets[key], self.GetSize())
                         self.AddPage(self.dataset_data_tabs[key], str(key))
+        print("works till here 4")
         self.Thaw()
+        print("works till here 5")
         logger.info("Finished")
     
     def DocumentsUpdated(self):
